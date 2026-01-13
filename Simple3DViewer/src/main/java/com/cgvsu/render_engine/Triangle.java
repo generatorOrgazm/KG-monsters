@@ -1,4 +1,3 @@
-// render_engine/Triangle.java
 package com.cgvsu.render_engine;
 
 import com.cgvsu.math.vector.*;

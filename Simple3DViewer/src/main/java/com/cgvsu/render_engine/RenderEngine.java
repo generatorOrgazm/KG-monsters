@@ -1,12 +1,12 @@
 package com.cgvsu.render_engine;
 
-import java.util.ArrayList;
-
+import com.cgvsu.math.vector.Vector2f;
 import com.cgvsu.math.vector.Vector3f;
-import javafx.scene.canvas.GraphicsContext;
-import javax.vecmath.*;
+import com.cgvsu.math.matrix.Matrix4f;
 import com.cgvsu.model.Model;
-import static com.cgvsu.render_engine.GraphicConveyor.*;
+import javafx.scene.canvas.GraphicsContext;
+
+import java.util.ArrayList;
 
 public class RenderEngine {
 
@@ -15,44 +15,59 @@ public class RenderEngine {
             final Camera camera,
             final Model mesh,
             final int width,
-            final int height)
-    {
-        Matrix4f modelMatrix = rotateScaleTranslate();
+            final int height) {
+
+        // Получаем матрицы
+        Matrix4f modelMatrix = GraphicConveyor.rotateScaleTranslate();
         Matrix4f viewMatrix = camera.getViewMatrix();
         Matrix4f projectionMatrix = camera.getProjectionMatrix();
 
-        Matrix4f modelViewProjectionMatrix = new Matrix4f(modelMatrix);
-        modelViewProjectionMatrix.mul(viewMatrix);
-        modelViewProjectionMatrix.mul(projectionMatrix);
+        // Вычисляем полную матрицу преобразования
+        Matrix4f modelViewProjectionMatrix = projectionMatrix
+                .multiplyMatrix(viewMatrix)
+                .multiplyMatrix(modelMatrix);
 
-        final int nPolygons = mesh.polygons.size();
-        for (int polygonInd = 0; polygonInd < nPolygons; ++polygonInd) {
-            final int nVerticesInPolygon = mesh.polygons.get(polygonInd).getVertexIndices().size();
+        // Рисуем все полигоны модели
+        for (var polygon : mesh.polygons) {
+            final int nVerticesInPolygon = polygon.getVertexIndices().size();
 
-            ArrayList<Point2f> resultPoints = new ArrayList<>();
-            for (int vertexInPolygonInd = 0; vertexInPolygonInd < nVerticesInPolygon; ++vertexInPolygonInd) {
-                Vector3f vertex = mesh.vertices.get(mesh.polygons.get(polygonInd).getVertexIndices().get(vertexInPolygonInd));
+            // Преобразуем вершины полигона в экранные координаты
+            ArrayList<Vector2f> screenPoints = new ArrayList<>();
+            for (int vertexIndex : polygon.getVertexIndices()) {
+                Vector3f vertex = mesh.vertices.get(vertexIndex);
 
-                javax.vecmath.Vector3f vertexVecmath = new javax.vecmath.Vector3f(vertex.x, vertex.y, vertex.z);
+                // Применяем матрицу преобразования
+                Vector3f transformedVertex = Matrix4f.multiplyMatrix4ByVector3(
+                        modelViewProjectionMatrix, vertex);
 
-                Point2f resultPoint = vertexToPoint(multiplyMatrix4ByVector3(modelViewProjectionMatrix, vertexVecmath), width, height);
-                resultPoints.add(resultPoint);
+                // Преобразуем в экранные координаты
+                Vector2f screenPoint = GraphicConveyor.vertexToPoint(
+                        transformedVertex, width, height);
+                screenPoints.add(screenPoint);
             }
 
-            for (int vertexInPolygonInd = 1; vertexInPolygonInd < nVerticesInPolygon; ++vertexInPolygonInd) {
-                graphicsContext.strokeLine(
-                        resultPoints.get(vertexInPolygonInd - 1).x,
-                        resultPoints.get(vertexInPolygonInd - 1).y,
-                        resultPoints.get(vertexInPolygonInd).x,
-                        resultPoints.get(vertexInPolygonInd).y);
-            }
-
-            if (nVerticesInPolygon > 0)
-                graphicsContext.strokeLine(
-                        resultPoints.get(nVerticesInPolygon - 1).x,
-                        resultPoints.get(nVerticesInPolygon - 1).y,
-                        resultPoints.get(0).x,
-                        resultPoints.get(0).y);
+            // Рисуем линии между вершинами полигона
+            drawPolygonWireframe(graphicsContext, screenPoints);
         }
+    }
+
+    private static void drawPolygonWireframe(
+            GraphicsContext graphicsContext,
+            ArrayList<Vector2f> points) {
+
+        if (points.size() < 2) return;
+
+        // Рисуем линии между последовательными вершинами
+        for (int i = 0; i < points.size() - 1; i++) {
+            Vector2f p1 = points.get(i);
+            Vector2f p2 = points.get(i + 1);
+
+            graphicsContext.strokeLine(p1.x, p1.y, p2.x, p2.y);
+        }
+
+        // Замыкаем полигон
+        Vector2f last = points.get(points.size() - 1);
+        Vector2f first = points.get(0);
+        graphicsContext.strokeLine(last.x, last.y, first.x, first.y);
     }
 }
