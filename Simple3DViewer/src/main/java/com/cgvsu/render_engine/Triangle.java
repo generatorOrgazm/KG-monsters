@@ -1,7 +1,7 @@
 // render_engine/Triangle.java
 package com.cgvsu.render_engine;
 
-import com.cgvsu.math.*;
+import com.cgvsu.math.vector.*;
 
 public class Triangle {
     private Vector3f[] vertices;
