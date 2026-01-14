@@ -81,6 +81,7 @@ public class Matrix4f {
         return new Matrix4f(result);
     }
 
+
     public static Matrix4f transpose(Matrix4f m) {
         float[][] result = new float[4][4];
         for (int i = 0; i < 4; i++) {
@@ -128,43 +129,43 @@ public class Matrix4f {
         return det;
     }
 
-    public static Matrix4f inverse(Matrix4f m) {
-        float det = determinant(m);
-
-        if (Math.abs(det) < 1e-10) {
-            throw new IllegalArgumentException("Определитель равен 0, матрица необратимая");
-        }
-
-        float[][] inverseData = new float[4][4];
-
-        for (int i = 0; i < 4; i++) {
-            for (int j = 0; j < 4; j++) {
-                float[][] minorData = new float[3][3];
-                int minorRow = 0;
-
-                for (int row = 0; row < 4; row++) {
-                    if (row == i) continue;
-
-                    int minorCol = 0;
-                    for (int col = 0; col < 4; col++) {
-                        if (col == j) continue;
-
-                        minorData[minorRow][minorCol] = m.get(row, col);
-                        minorCol++;
-                    }
-                    minorRow++;
-                }
-
-                Matrix3f minor = new Matrix3f(minorData);
-                float minorDet = Matrix3f.determinant(minor);
-
-                float sign = ((i + j) % 2 == 0) ? 1 : -1;
-                inverseData[j][i] = sign * minorDet / det;
-            }
-        }
-
-        return new Matrix4f(inverseData);
-    }
+//    public static Matrix4f inverse(Matrix4f m) {
+//        float det = determinant(m);
+//
+//        if (Math.abs(det) < 1e-10) {
+//            throw new IllegalArgumentException("Определитель равен 0, матрица необратимая");
+//        }
+//
+//        float[][] inverseData = new float[4][4];
+//
+//        for (int i = 0; i < 4; i++) {
+//            for (int j = 0; j < 4; j++) {
+//                float[][] minorData = new float[3][3];
+//                int minorRow = 0;
+//
+//                for (int row = 0; row < 4; row++) {
+//                    if (row == i) continue;
+//
+//                    int minorCol = 0;
+//                    for (int col = 0; col < 4; col++) {
+//                        if (col == j) continue;
+//
+//                        minorData[minorRow][minorCol] = m.get(row, col);
+//                        minorCol++;
+//                    }
+//                    minorRow++;
+//                }
+//
+//                Matrix3f minor = new Matrix3f(minorData);
+//                float minorDet = Matrix3f.determinant(minor);
+//
+//                float sign = ((i + j) % 2 == 0) ? 1 : -1;
+//                inverseData[j][i] = sign * minorDet / det;
+//            }
+//        }
+//
+//        return new Matrix4f(inverseData);
+//    }
 
     public static Vector4f solveSystem(Matrix4f A, Vector4f b) {
         float[][] augmented = new float[4][5];
@@ -230,19 +231,18 @@ public class Matrix4f {
         return new Vector4f(solution[0], solution[1], solution[2], solution[3]);
     }
 
-
-    public void scale(float sx, float sy, float sz) {
-        float[][] scaleMatrixData = {
-                {sx, 0, 0, 0},
-                {0, sy, 0, 0},
-                {0, 0, sz, 0},
-                {0, 0, 0, 1}
-        };
-
-        Matrix4f scaleMatrix = new Matrix4f(scaleMatrixData);
-
-        Matrix4f result = this.multiplyMatrix(scaleMatrix);
-        this.matrix = result.getMatrix();
+    public static Matrix4f unitMatrix() {
+        float[][] res = new float[4][4];
+        for (int i = 0; i < res.length; i++) {
+            for (int j = 0; j < res.length; j++) {
+                if (i == j) {
+                    res[i][j] = 1;
+                } else {
+                    res[i][j] = 0;
+                }
+            }
+        }
+        return new Matrix4f(res);
     }
 
     public float get(int i, int j) {

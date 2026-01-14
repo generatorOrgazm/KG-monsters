@@ -80,4 +80,10 @@ public class Vector3f {
     public float getZ() {
         return z;
     }
+
+    public boolean equals(float x, float y, float z) {
+        return Math.abs(this.x - x) < EPSILON &&
+                Math.abs(this.y - y) < EPSILON &&
+                Math.abs(this.z - z) < EPSILON;
+    }
 }

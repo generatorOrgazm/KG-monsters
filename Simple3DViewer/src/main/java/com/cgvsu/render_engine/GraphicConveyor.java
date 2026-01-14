@@ -1,59 +1,110 @@
 package com.cgvsu.render_engine;
 
+
+import com.cgvsu.math.matrix.Matrix4f;
 import com.cgvsu.math.vector.Vector2f;
 import com.cgvsu.math.vector.Vector3f;
-import com.cgvsu.math.matrix.Matrix4f;
 
 public class GraphicConveyor {
 
-    // Создание видовой матрицы (lookAt)
-    public static Matrix4f lookAt(Vector3f eye, Vector3f target, Vector3f up) {
-        Vector3f zAxis = target.sub(eye).normalize();
-        Vector3f xAxis = up.cross(zAxis).normalize();
-        Vector3f yAxis = zAxis.cross(xAxis);
-
-        float[][] data = {
-                {xAxis.x, xAxis.y, xAxis.z, -xAxis.dot(eye)},
-                {yAxis.x, yAxis.y, yAxis.z, -yAxis.dot(eye)},
-                {zAxis.x, zAxis.y, zAxis.z, -zAxis.dot(eye)},
+    public static Matrix4f translateRotateScale(Vector3f translate, Vector3f rotate, Vector3f scale) {
+        Matrix4f translateMatrix = new Matrix4f(new float[][] {
+                {1, 0, 0, translate.getX()},
+                {0, 1, 0, translate.getY()},
+                {0, 0, 1, translate.getZ()},
                 {0, 0, 0, 1}
-        };
+        });
+        Matrix4f scaleMatrix = new Matrix4f(new float[][]  {
+                {scale.getX(), 0, 0, 0},
+                {0, scale.getY(), 0, 0},
+                {0, 0, scale.getZ(), 0},
+                {0, 0, 0, 1}
+        });
+        Matrix4f rotateMatrix = getRotateMatrix(rotate);
+        return translateMatrix.multiplyMatrix(rotateMatrix).multiplyMatrix(scaleMatrix);
+    }
 
-        return new Matrix4f(data);
+    private static Matrix4f getRotateMatrix(Vector3f rotate) {
+        float alpha = (float) ((rotate.getX() * Math.PI) / 180);
+        float beta = (float) ((rotate.getY() * Math.PI) / 180);
+        float gamma = (float) ((rotate.getZ() * Math.PI) / 180);
+        Matrix4f rotateMatrixX = new Matrix4f(new float[][]{
+                {1, 0, 0, 0},
+                {0, (float) Math.cos(alpha), (float) Math.sin(alpha), 0},
+                {0, (float) -Math.sin(alpha), (float) Math.cos(alpha), 0},
+                {0, 0, 0, 1}});
+        Matrix4f rotateMatrixY = new Matrix4f(new float[][]{
+                {(float) Math.cos(beta), 0, (float) Math.sin(beta), 0},
+                {0, 1, 0, 0},
+                {(float) -Math.sin(beta), 0, (float) Math.cos(beta), 0},
+                {0, 0, 0, 1}});
+        Matrix4f rotateMatrixZ = new Matrix4f(new float[][]{
+                {(float) Math.cos(gamma), (float) Math.sin(gamma), 0, 0},
+                {(float) -Math.sin(gamma), (float) Math.cos(gamma), 0, 0},
+                {0, 0, 1, 0},
+                {0, 0, 0, 1}});
+        return rotateMatrixX.multiplyMatrix(rotateMatrixY).multiplyMatrix(rotateMatrixZ);
+    }
+    public static Matrix4f lookAt(Vector3f eye, Vector3f target) {
+        return lookAt(eye, target, new Vector3f(0F, 1.0F, 0F));
+    }
+
+    //создаю видовую матрицу
+    public static Matrix4f lookAt(Vector3f eye, Vector3f target, Vector3f up) {
+        Vector3f resultZ = target.sub(eye);
+        Vector3f resultX = up.cross(resultZ);
+        Vector3f resultY = resultZ.cross(resultX);
+
+
+        resultZ.normalize();
+        resultX.normalize();
+        resultY.normalize();
+
+
+        Matrix4f translateMatrix = new Matrix4f(new float[][]{
+                {1, 0, 0, -eye.getX()},
+                {0, 1, 0, -eye.getY()},
+                {0, 0, 1, -eye.getZ()},
+                {0, 0, 0, 1}
+        });
+
+        Matrix4f projectionMatrix = new Matrix4f(new float[][]{
+                {resultX.getX(), resultX.getY(), resultX.getZ(), 0},
+                {resultY.getX(), resultY.getY(), resultY.getZ(), 0},
+                {resultZ.getX(), resultZ.getY(), resultZ.getZ(), 0},
+                {0, 0, 0, 1}
+        });
+        return projectionMatrix.multiplyMatrix(translateMatrix);
     }
 
     // Создание матрицы перспективной проекции
     public static Matrix4f perspective(
-            float fov,          // угол обзора в радианах
-            float aspectRatio,  // соотношение сторон (width/height)
-            float nearPlane,    // ближняя плоскость отсечения
-            float farPlane) {   // дальняя плоскость отсечения
+            final float fov,
+            final float aspectRatio,
+            final float nearPlane,
+            final float farPlane) {
+        float[][] matrix = new float[4][4];
+        float tangentMinusOnDegree = (float) (1.0F / (Math.tan(fov * 0.5F)));
+        matrix[0][0] = tangentMinusOnDegree / aspectRatio;
+        matrix[1][1] = tangentMinusOnDegree;
+        matrix[2][2] = (farPlane+nearPlane) / (farPlane-nearPlane);
+        matrix[2][3] = 2*farPlane*nearPlane / (nearPlane-farPlane);
+        matrix[3][2] = 1.0F;
 
-        float f = (float) (1.0 / Math.tan(fov / 2.0));
-        float rangeInv = 1.0f / (nearPlane - farPlane);
-
-        float[][] data = {
-                {f / aspectRatio, 0, 0, 0},
-                {0, f, 0, 0},
-                {0, 0, (farPlane + nearPlane) * rangeInv, 2 * farPlane * nearPlane * rangeInv},
-                {0, 0, -1, 0}
-        };
-
-        return new Matrix4f(data);
+        return new Matrix4f(matrix);
     }
 
-    // Преобразование 3D вершины в 2D точку экрана
-    public static Vector2f vertexToPoint(Vector3f vertex, int width, int height) {
-        // Преобразуем из NDC [-1, 1] в экранные координаты
-        float x = (vertex.x + 1.0f) * 0.5f * width;
-        float y = (1.0f - vertex.y) * 0.5f * height; // Y инвертирован
-
-        return new Vector2f(x, y);
+    public static Vector3f multiplyMatrix4ByVector3(final Matrix4f matrix, final Vector3f vertex) {
+        final float x = (vertex.x * matrix.get(0,0)) + (vertex.y * matrix.get(0,1)) + (vertex.z * matrix.get(0,2)) + matrix.get(0,3);
+        final float y = (vertex.x * matrix.get(1,0)) + (vertex.y * matrix.get(1,1)) + (vertex.z * matrix.get(1,2)) + matrix.get(1,3);
+        final float z = (vertex.x * matrix.get(2,0)) + (vertex.y * matrix.get(2,1)) + (vertex.z * matrix.get(2,2)) + matrix.get(2,3);
+        final float w = (vertex.x * matrix.get(3,0)) + (vertex.y * matrix.get(3,1)) + (vertex.z * matrix.get(3,2)) + matrix.get(3,3);
+        return new Vector3f(x / w, y / w, z / w);
     }
 
-    // Временная заглушка - возвращает единичную матрицу
-    // Второй участник должен реализовать настоящие преобразования
-    public static Matrix4f rotateScaleTranslate() {
-        return new Matrix4f(); // единичная матрица
+    //взяла vector2f вместо point2f из библиотеки
+    public static Vector2f vertexToPoint(final Vector3f vertex, final int width, final int height) {
+        return new Vector2f(vertex.getX() * width + width / 2.0F, -vertex.getY() * height + height / 2.0F);
     }
+
 }
