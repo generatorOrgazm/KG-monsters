@@ -22,16 +22,6 @@ public class Camera {
         this.farPlane = farPlane;
     }
 
-    // Альтернативный конструктор с дефолтными значениями
-    public Camera(javax.vecmath.Vector3f vector3f, javax.vecmath.Vector3f f, float fov, int aspectRatio, float nearPlane, int farPlane) {
-        this.position = new Vector3f(0, 0, 10);
-        this.target = new Vector3f(0, 0, 0);
-        this.fov = 60.0f;
-        this.aspectRatio = 16.0f / 9.0f;
-        this.nearPlane = 0.1f;
-        this.farPlane = 100.0f;
-    }
-
     // Получение видовой матрицы
     public Matrix4f getViewMatrix() {
         return GraphicConveyor.lookAt(position, target, UP_VECTOR);
