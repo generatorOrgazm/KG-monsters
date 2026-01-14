@@ -1,14 +1,17 @@
 package com.cgvsu.render_engine;
-import javax.vecmath.*;
+
+
+import com.cgvsu.math.matrix.Matrix4f;
+import com.cgvsu.math.vector.Vector3f;
 
 public class GraphicConveyor {
 
     public static Matrix4f rotateScaleTranslate() {
-        float[] matrix = new float[]{
-                1, 0, 0, 0,
-                0, 1, 0, 0,
-                0, 0, 1, 0,
-                0, 0, 0, 1};
+        float[][] matrix = new float[][]{
+                {1, 0, 0, 0},
+                {0, 1, 0, 0},
+                {0, 0, 1, 0},
+                {0, 0, 0, 1}};
         return new Matrix4f(matrix);
     }
 
@@ -16,25 +19,32 @@ public class GraphicConveyor {
         return lookAt(eye, target, new Vector3f(0F, 1.0F, 0F));
     }
 
+    //создаю видовую матрицу
     public static Matrix4f lookAt(Vector3f eye, Vector3f target, Vector3f up) {
-        Vector3f resultX = new Vector3f();
-        Vector3f resultY = new Vector3f();
-        Vector3f resultZ = new Vector3f();
+        Vector3f resultZ = target.sub(eye);
+        Vector3f resultX = up.cross(resultZ);
+        Vector3f resultY = resultZ.cross(resultX)
 
-        resultZ.sub(target, eye);
-        resultX.cross(up, resultZ);
-        resultY.cross(resultZ, resultX);
 
+        resultZ.normalize();
         resultX.normalize();
         resultY.normalize();
-        resultZ.normalize();
 
-        float[] matrix = new float[]{
-                resultX.x, resultY.x, resultZ.x, 0,
-                resultX.y, resultY.y, resultZ.y, 0,
-                resultX.z, resultY.z, resultZ.z, 0,
-                -resultX.dot(eye), -resultY.dot(eye), -resultZ.dot(eye), 1};
-        return new Matrix4f(matrix);
+
+        Matrix4f translateMatrix = new Matrix4f(new float[][]{
+                {1, 0, 0, -eye.getX()},
+                {0, 1, 0, -eye.getY()},
+                {0, 0, 1, -eye.getZ()},
+                {0, 0, 0, 1}
+        });
+
+        Matrix4f projectionMatrix = new Matrix4f(new float[][]{
+                {resultX.getX(), resultX.getY(), resultX.getZ(), 0},
+                {resultY.getX(), resultY.getY(), resultY.getZ(), 0},
+                {resultZ.getX(), resultZ.getY(), resultZ.getZ(), 0},
+                {0, 0, 0, 1}
+        });
+        return projectionMatrix.multiplyMatrix(translateMatrix);
     }
 
     public static Matrix4f perspective(
