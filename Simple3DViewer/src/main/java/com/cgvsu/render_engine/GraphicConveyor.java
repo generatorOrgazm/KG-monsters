@@ -77,6 +77,7 @@ public class GraphicConveyor {
         return projectionMatrix.multiplyMatrix(translateMatrix);
     }
 
+    // Создание матрицы перспективной проекции
     public static Matrix4f perspective(
             final float fov,
             final float aspectRatio,
