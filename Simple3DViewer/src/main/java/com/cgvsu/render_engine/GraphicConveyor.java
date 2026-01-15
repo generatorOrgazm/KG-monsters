@@ -7,13 +7,13 @@ import com.cgvsu.math.vector.Vector3f;
 public class GraphicConveyor {
 
     public static Matrix4f translateRotateScale(Vector3f translate, Vector3f rotate, Vector3f scale) {
-        Matrix4f translateMatrix = new Matrix4f(new float[][] {
+        Matrix4f translateMatrix = new Matrix4f(new float[][]{
                 {1, 0, 0, translate.getX()},
                 {0, 1, 0, translate.getY()},
                 {0, 0, 1, translate.getZ()},
                 {0, 0, 0, 1}
         });
-        Matrix4f scaleMatrix = new Matrix4f(new float[][]  {
+        Matrix4f scaleMatrix = new Matrix4f(new float[][]{
                 {scale.getX(), 0, 0, 0},
                 {0, scale.getY(), 0, 0},
                 {0, 0, scale.getZ(), 0},
@@ -83,21 +83,21 @@ public class GraphicConveyor {
         return rotationMatrix.multiplyMatrix(translateMatrix);
     }
 
-        public static Matrix4f perspective(
+    public static Matrix4f perspective(
             final float fov,
             final float aspectRatio,
             final float nearPlane,
             final float farPlane) {
-            float[][] matrix = new float[4][4];
-            float fovRad = (float) Math.toRadians(fov);
+        float[][] matrix = new float[4][4];
+        float fovRad = (float) Math.toRadians(fov);
 
         float tangentMinusOne = (float) (1.0F / (Math.tan(fovRad * 0.5F)));
 
 
         matrix[0][0] = tangentMinusOne / aspectRatio;
         matrix[1][1] = tangentMinusOne;
-        matrix[2][2] = (farPlane+nearPlane) / (farPlane-nearPlane);
-        matrix[2][3] = 2.0F*farPlane*nearPlane / (nearPlane-farPlane);
+        matrix[2][2] = (farPlane + nearPlane) / (farPlane - nearPlane);
+        matrix[2][3] = 2.0F * farPlane * nearPlane / (nearPlane - farPlane);
         matrix[3][2] = 1.0F;
 
         return new Matrix4f(matrix);
