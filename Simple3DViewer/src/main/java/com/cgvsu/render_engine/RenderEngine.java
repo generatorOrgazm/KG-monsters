@@ -13,12 +13,18 @@ public class RenderEngine {
     public static void render(
             final GraphicsContext graphicsContext,
             final Camera camera,
-            final Model mesh,
+            final Model model,
             final int width,
             final int height) {
 
         // Получаем матрицы
-        Matrix4f modelMatrix = GraphicConveyor.rotateScaleTranslate();
+        Matrix4f modelMatrix = GraphicConveyor.translateRotateScale(
+                model.transform.position,    // перенос
+                model.transform.rotation,    // поворот (градусы)
+                model.transform.scale        // масштаб
+        );
+
+
         Matrix4f viewMatrix = camera.getViewMatrix();
         Matrix4f projectionMatrix = camera.getProjectionMatrix();
 
@@ -28,13 +34,13 @@ public class RenderEngine {
                 .multiplyMatrix(modelMatrix);
 
         // Рисуем все полигоны модели
-        for (var polygon : mesh.polygons) {
+        for (var polygon : model.polygons) {
             final int nVerticesInPolygon = polygon.getVertexIndices().size();
 
             // Преобразуем вершины полигона в экранные координаты
             ArrayList<Vector2f> screenPoints = new ArrayList<>();
             for (int vertexIndex : polygon.getVertexIndices()) {
-                Vector3f vertex = mesh.vertices.get(vertexIndex);
+                Vector3f vertex = model.vertices.get(vertexIndex);
 
                 // Применяем матрицу преобразования
                 Vector3f transformedVertex = Matrix4f.multiplyMatrix4ByVector3(
