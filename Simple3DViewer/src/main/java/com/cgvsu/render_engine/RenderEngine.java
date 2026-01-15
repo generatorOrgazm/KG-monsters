@@ -17,63 +17,97 @@ public class RenderEngine {
             final int width,
             final int height) {
 
-        // Получаем матрицы
-        Matrix4f modelMatrix = GraphicConveyor.translateRotateScale(
-                model.transform.position,    // перенос
-                model.transform.rotation,    // поворот (градусы)
-                model.transform.scale        // масштаб
-        );
+        // Проверяем валидность параметров
+        if (width <= 0 || height <= 0) return;
 
+        // ========== 1. ПОДГОТОВКА МОДЕЛИ ==========
+        model.ensureTriangulated();     // Гарантируем триангуляцию
+        model.ensureNormalsExist();     // Гарантируем наличие нормалей
+        model.applyTransform();         // Применяем трансформации модели
 
+        // ========== 2. ПОЛУЧАЕМ МАТРИЦЫ ==========
         Matrix4f viewMatrix = camera.getViewMatrix();
         Matrix4f projectionMatrix = camera.getProjectionMatrix();
 
-        // Вычисляем полную матрицу преобразования
-        Matrix4f modelViewProjectionMatrix = projectionMatrix
-                .multiplyMatrix(viewMatrix)
-                .multiplyMatrix(modelMatrix);
+        // ========== 3. КОМБИНИРОВАННАЯ МАТРИЦА ==========
+        Matrix4f viewProjectionMatrix = projectionMatrix.multiplyMatrix(viewMatrix);
 
-        // Рисуем все полигоны модели
+        // ========== 4. РЕНДЕРИНГ ==========
+        graphicsContext.setStroke(javafx.scene.paint.Color.BLACK);
+        graphicsContext.setLineWidth(1.0);
+
         for (var polygon : model.polygons) {
-            final int nVerticesInPolygon = polygon.getVertexIndices().size();
+            ArrayList<Integer> vertexIndices = polygon.getVertexIndices();
 
-            // Преобразуем вершины полигона в экранные координаты
-            ArrayList<Vector2f> screenPoints = new ArrayList<>();
-            for (int vertexIndex : polygon.getVertexIndices()) {
-                Vector3f vertex = model.vertices.get(vertexIndex);
+            // Для треугольников (после триангуляции)
+            if (vertexIndices.size() == 3) {
+                ArrayList<Vector2f> screenPoints = new ArrayList<>();
 
-                // Применяем матрицу преобразования
-                Vector3f transformedVertex = Matrix4f.multiplyMatrix4ByVector3(
-                        modelViewProjectionMatrix, vertex);
+                // Обрабатываем все 3 вершины треугольника
+                for (int i = 0; i < 3; i++) {
+                    int vertexIndex = vertexIndices.get(i);
 
-                // Преобразуем в экранные координаты
-                Vector2f screenPoint = GraphicConveyor.vertexToPoint(
-                        transformedVertex, width, height);
-                screenPoints.add(screenPoint);
+                    // Берем уже трансформированную вершину
+                    Vector3f vertex = model.verticesTransform.get(vertexIndex);
+
+                    // Применяем видовую и проекционную матрицы
+                    Vector3f projectedVertex = Matrix4f.multiplyMatrix4ByVector3(
+                            viewProjectionMatrix, vertex);
+
+                    // Преобразуем в экранные координаты
+                    Vector2f screenPoint = GraphicConveyor.vertexToPoint(
+                            projectedVertex, width, height);
+                    screenPoints.add(screenPoint);
+                }
+
+                // Рисуем треугольник
+                drawTriangleWireframe(graphicsContext, screenPoints);
             }
-
-            // Рисуем линии между вершинами полигона
-            drawPolygonWireframe(graphicsContext, screenPoints);
         }
     }
 
-    private static void drawPolygonWireframe(
+    private static void drawTriangleWireframe(
             GraphicsContext graphicsContext,
             ArrayList<Vector2f> points) {
 
-        if (points.size() < 2) return;
+        if (points.size() != 3) return;
 
-        // Рисуем линии между последовательными вершинами
-        for (int i = 0; i < points.size() - 1; i++) {
-            Vector2f p1 = points.get(i);
-            Vector2f p2 = points.get(i + 1);
+        Vector2f p1 = points.get(0);
+        Vector2f p2 = points.get(1);
+        Vector2f p3 = points.get(2);
 
-            graphicsContext.strokeLine(p1.x, p1.y, p2.x, p2.y);
+        // Рисуем все 3 стороны треугольника
+        graphicsContext.strokeLine(p1.x, p1.y, p2.x, p2.y);
+        graphicsContext.strokeLine(p2.x, p2.y, p3.x, p3.y);
+        graphicsContext.strokeLine(p3.x, p3.y, p1.x, p1.y);
+    }
+
+    // Вспомогательный метод для отладки
+    public static void renderDebugInfo(
+            GraphicsContext gc,
+            Camera camera,
+            Model model,
+            int width,
+            int height) {
+
+        // Отображаем информацию о камере
+        gc.setFill(javafx.scene.paint.Color.RED);
+        gc.fillText(String.format("Camera: (%.1f, %.1f, %.1f)",
+                        camera.getPosition().x, camera.getPosition().y, camera.getPosition().z),
+                10, 20);
+        gc.fillText(String.format("Target: (%.1f, %.1f, %.1f)",
+                        camera.getTarget().x, camera.getTarget().y, camera.getTarget().z),
+                10, 40);
+        gc.fillText(String.format("Window: %dx%d", width, height), 10, 60);
+
+        if (model != null) {
+            gc.fillText(String.format("Model: %d vertices, %d triangles",
+                    model.vertices.size(), model.polygons.size()), 10, 80);
+            gc.fillText(String.format("Transform: Pos(%.1f, %.1f, %.1f) Rot(%.1f, %.1f, %.1f) Scale(%.1f, %.1f, %.1f)",
+                            model.transform.getPosition().x, model.transform.getPosition().y, model.transform.getPosition().z,
+                            model.transform.getRotation().x, model.transform.getRotation().y, model.transform.getRotation().z,
+                            model.transform.getScale().x, model.transform.getScale().y, model.transform.getScale().z),
+                    10, 100);
         }
-
-        // Замыкаем полигон
-        Vector2f last = points.get(points.size() - 1);
-        Vector2f first = points.get(0);
-        graphicsContext.strokeLine(last.x, last.y, first.x, first.y);
     }
 }
