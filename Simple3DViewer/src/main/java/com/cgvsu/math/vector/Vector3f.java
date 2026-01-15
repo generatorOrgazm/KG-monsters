@@ -22,17 +22,17 @@ public class Vector3f {
                 && Math.abs(z - other.z) < EPSILON;
     }
 
-    public Vector3f add(Vector3f other) {
+    public final Vector3f add(Vector3f other) {
         return new Vector3f(this.x + other.x, this.y + other.y, this.z + other.z);
     }
 
-    public Vector3f sub(Vector3f other) {
+    public final Vector3f sub(Vector3f other) {
         return new Vector3f(this.x - other.x, this.y - other.y, this.z - other.z);
     }
 
-//    public static Vector3f multiply(Vector3f v, float k) {
-//        return new Vector3f(v.getX() * k, v.getY() * k, v.getZ() * k);
-//    }
+    public static Vector3f multiply(Vector3f v, float k) {
+        return new Vector3f(v.getX() * k, v.getY() * k, v.getZ() * k);
+    }
 
 //
 //    public static Vector3f divide(Vector3f v, float k) {
@@ -66,6 +66,16 @@ public class Vector3f {
                 this.z * other.x - this.x * other.z,
                 this.x * other.y - this.y * other.x
         );
+    }
+
+    public static float lenghtBetweenToVectors(Vector3f v1, Vector3f v2){
+        return (float) Math.sqrt((v1.x-v2.x) * (v1.x-v2.x) + (v1.y-v2.y) * (v1.y-v2.y) + (v1.z-v2.z) * (v1.z-v2.z));
+    }
+
+    public void set(float x, float y, float z) {
+        this.x = x;
+        this.y = y;
+        this.z = z;
     }
 
 
