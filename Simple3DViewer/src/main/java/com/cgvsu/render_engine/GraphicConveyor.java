@@ -20,6 +20,8 @@ public class GraphicConveyor {
                 {0, 0, 0, 1}
         });
         Matrix4f rotateMatrix = getRotateMatrix(rotate);
+
+        // Порядок: сначала масштаб, потом поворот, потом перенос
         return translateMatrix.multiplyMatrix(rotateMatrix).multiplyMatrix(scaleMatrix);
     }
 
