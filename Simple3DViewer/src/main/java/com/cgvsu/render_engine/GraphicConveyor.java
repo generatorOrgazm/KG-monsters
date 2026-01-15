@@ -48,7 +48,7 @@ public class GraphicConveyor {
                 {0, 0, 1, 0},
                 {0, 0, 0, 1}});
 
-        // Порядок вращения: Z -> Y -> X
+
         Matrix4f result = rotateMatrixZ.multiplyMatrix(rotateMatrixY);
         return result.multiplyMatrix(rotateMatrixX);
     }
@@ -83,24 +83,22 @@ public class GraphicConveyor {
         return rotationMatrix.multiplyMatrix(translateMatrix);
     }
 
-    public static Matrix4f perspective(
+        public static Matrix4f perspective(
             final float fov,
             final float aspectRatio,
             final float nearPlane,
             final float farPlane) {
+            float[][] matrix = new float[4][4];
+            float fovRad = (float) Math.toRadians(fov);
 
-        // Преобразуем FOV из градусов в радианы
-        float fovRad = (float) Math.toRadians(fov);
-        float tanHalfFov = (float) Math.tan(fovRad / 2.0f);
-        float range = nearPlane - farPlane;
+        float tangentMinusOne = (float) (1.0F / (Math.tan(fovRad * 0.5F)));
 
-        float[][] matrix = new float[4][4];
 
-        matrix[0][0] = 1.0f / (tanHalfFov * aspectRatio);
-        matrix[1][1] = 1.0f / tanHalfFov;
-        matrix[2][2] = (-nearPlane - farPlane) / range;
-        matrix[2][3] = 2.0f * farPlane * nearPlane / range;
-        matrix[3][2] = 1.0f;
+        matrix[0][0] = tangentMinusOne / aspectRatio;
+        matrix[1][1] = tangentMinusOne;
+        matrix[2][2] = (farPlane+nearPlane) / (farPlane-nearPlane);
+        matrix[2][3] = 2.0F*farPlane*nearPlane / (nearPlane-farPlane);
+        matrix[3][2] = 1.0F;
 
         return new Matrix4f(matrix);
     }
@@ -118,9 +116,7 @@ public class GraphicConveyor {
     }
 
     public static Vector2f vertexToPoint(final Vector3f vertex, final int width, final int height) {
-        // Нормализованные координаты [-1, 1] -> [0, width/height]
-        float x = (vertex.x + 1.0f) * 0.5f * width;
-        float y = (1.0f - vertex.y) * 0.5f * height; // Ось Y инвертирована
-        return new Vector2f(x, y);
+        return new Vector2f((vertex.getX() * width + width) / 2.0F, (-vertex.getY() * height + height) / 2.0F);
     }
+
 }
