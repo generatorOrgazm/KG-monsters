@@ -23,7 +23,6 @@ public class Camera {
         this.mousePositionX = 0;
         this.mousePositionY = 0;
 
-        // Инициализируем кэши
         viewMatrixDirty = true;
         projectionMatrixDirty = true;
     }

@@ -11,34 +11,49 @@ import java.util.ArrayList;
 
 public class Model {
 
-    // МАТЕМАТИКА (геометрия)
     public ArrayList<Vector3f> vertices = new ArrayList<Vector3f>();
     public ArrayList<Vector3f> verticesTransform = new ArrayList<Vector3f>();
     public ArrayList<Vector2f> textureVertices = new ArrayList<Vector2f>();
     public ArrayList<Vector3f> normals = new ArrayList<Vector3f>();
     public ArrayList<Polygon> polygons = new ArrayList<Polygon>();
 
-    // ТРАНСФОРМАЦИИ
     public TransformModel transform = new TransformModel();
 
-    // Флаги для состояния
-    private boolean transformDirty = true; // ← ОДИН РАЗ!
+    private boolean transformDirty = true;
     private boolean isTriangulated = false;
     private boolean hasValidNormals = false;
+    private boolean areNormalsComputed = false; // Новый флаг
 
-    // Параметры рендеринга
-    private Vector3f color = new Vector3f(0.7f, 0.7f, 0.7f); // серый по умолчанию
+    private Vector3f color = new Vector3f(0.7f, 0.7f, 0.7f);
     private boolean useWireframe = false;
     private boolean useTexture = false;
     private boolean useLighting = false;
     private Texture texture = null;
 
-    // ========== КОНСТРУКТОРЫ ==========
     public Model() {
-        transform.setParentModel(this); // Важно: связываем трансформации с моделью
+        transform.setParentModel(this);
     }
 
-    // ========== ТРАНСФОРМАЦИИ ==========
+    // ========== ПОДГОТОВКА К ОТРИСОВКЕ ==========
+
+    /**
+     * Подготовить модель к отрисовке:
+     * 1. Применить трансформации
+     * 2. Триангулировать если нужно
+     * 3. Пересчитать нормали
+     */
+    public void prepareForRendering() {
+        applyTransform();
+
+        if (!isTriangulated) {
+            triangulate();
+        }
+
+        if (!areNormalsComputed || !hasValidNormals) {
+            recalculateNormals();
+        }
+    }
+
     public void markTransformDirty() {
         transformDirty = true;
     }
@@ -74,95 +89,14 @@ public class Model {
         transformDirty = false;
     }
 
-    // ========== УПРАВЛЕНИЕ ТРАНСФОРМАЦИЯМИ ==========
-    public void setPosition(Vector3f position) {
-        transform.setPosition(position);
-    }
+    // ========== ТРИАНГУЛЯЦИЯ ==========
 
-    public void setRotation(Vector3f rotation) {
-        transform.setRotation(rotation);
-    }
-
-    public void setScale(Vector3f scale) {
-        transform.setScale(scale);
-    }
-
-    public void translate(Vector3f translation) {
-        transform.translate(translation);
-    }
-
-    public void rotate(Vector3f rotationDelta) {
-        transform.rotate(rotationDelta);
-    }
-
-    public void scale(Vector3f scaleFactor) {
-        transform.scale(scaleFactor);
-    }
-
-    public void scaleUniform(float factor) {
-        transform.scaleUniform(factor);
-    }
-
-    public void resetTransform() {
-        transform.reset();
-        applyTransform(); // Обновляем verticesTransform
-    }
-
-    // ========== ТРИАНГУЛЯЦИЯ И НОРМАЛИ ==========
     public void triangulate() {
         if (!isTriangulated) {
             Triangulator.triangulateModelInPlace(this);
             isTriangulated = true;
             hasValidNormals = false; // Нормали нужно пересчитать
-        }
-    }
-
-    public void recalculateNormals() {
-        normals.clear();
-
-        // Инициализируем список нормалей для каждой вершины
-        ArrayList<Vector3f> vertexNormals = new ArrayList<>();
-        for (int i = 0; i < vertices.size(); i++) {
-            vertexNormals.add(new Vector3f(0, 0, 0));
-        }
-
-        // Вычисляем нормали для каждого полигона
-        for (Polygon polygon : polygons) {
-            ArrayList<Integer> vertexIndices = polygon.getVertexIndices();
-
-            if (vertexIndices.size() >= 3) {
-                Vector3f v1 = vertices.get(vertexIndices.get(0));
-                Vector3f v2 = vertices.get(vertexIndices.get(1));
-                Vector3f v3 = vertices.get(vertexIndices.get(2));
-
-                Vector3f edge1 = v2.sub(v1);
-                Vector3f edge2 = v3.sub(v1);
-                Vector3f polygonNormal = edge1.cross(edge2).normalize();
-
-                // Добавляем нормаль полигона ко всем его вершинам
-                for (int vertexIndex : vertexIndices) {
-                    Vector3f currentNormal = vertexNormals.get(vertexIndex);
-                    vertexNormals.set(vertexIndex, currentNormal.add(polygonNormal));
-                }
-            }
-        }
-
-        // Нормализуем все нормали вершин
-        for (int i = 0; i < vertexNormals.size(); i++) {
-            Vector3f normal = vertexNormals.get(i);
-            if (normal.length() > Vector3f.EPSILON) {
-                normals.add(normal.normalize());
-            } else {
-                normals.add(new Vector3f(0, 1, 0)); // Дефолтная нормаль
-            }
-        }
-
-        hasValidNormals = true;
-    }
-
-    public void ensureNormalsExist() {
-        if (!hasValidNormals || normals.isEmpty() || normals.size() != vertices.size()) {
-            recalculateNormals();
+            areNormalsComputed = false;
         }
     }
 
@@ -172,43 +106,100 @@ public class Model {
         }
     }
 
-    // ========== ВСПОМОГАТЕЛЬНЫЕ МЕТОДЫ ==========
-    public ArrayList<Vector3f> getVerticesForSave(boolean includeTransform) {
-        if (includeTransform) {
-            applyTransform(); // Убедимся, что трансформации применены
-            return verticesTransform;
-        } else {
-            return vertices;
+    // ========== НОРМАЛИ ==========
+
+    /**
+     * Принудительно пересчитать нормали, даже если они есть в файле
+     */
+    public void recalculateNormals() {
+        // Очищаем существующие нормали
+        normals.clear();
+
+        // Инициализируем массив для накопления нормалей вершин
+        ArrayList<Vector3f> vertexNormals = new ArrayList<>();
+        for (int i = 0; i < vertices.size(); i++) {
+            vertexNormals.add(new Vector3f(0, 0, 0));
+        }
+
+        int triangleCount = 0;
+
+        // Проходим по всем полигонам (после триангуляции это треугольники)
+        for (Polygon polygon : polygons) {
+            ArrayList<Integer> vertexIndices = polygon.getVertexIndices();
+
+            if (vertexIndices.size() >= 3) {
+                triangleCount++;
+
+                // Получаем вершины треугольника
+                Vector3f v1 = vertices.get(vertexIndices.get(0));
+                Vector3f v2 = vertices.get(vertexIndices.get(1));
+                Vector3f v3 = vertices.get(vertexIndices.get(2));
+
+                // Вычисляем нормаль треугольника
+                Vector3f edge1 = v2.sub(v1);
+                Vector3f edge2 = v3.sub(v1);
+                Vector3f polygonNormal = edge1.cross(edge2);
+
+                // Нормализуем нормаль
+                float length = polygonNormal.length();
+                if (length > Vector3f.EPSILON) {
+                    polygonNormal = polygonNormal.normalize();
+
+                    // Добавляем нормаль треугольника к каждой вершине
+                    for (int vertexIndex : vertexIndices) {
+                        Vector3f currentNormal = vertexNormals.get(vertexIndex);
+                        vertexNormals.set(vertexIndex, currentNormal.add(polygonNormal));
+                    }
+                }
+            }
+        }
+
+        // Нормализуем накопленные нормали вершин
+        for (int i = 0; i < vertexNormals.size(); i++) {
+            Vector3f normal = vertexNormals.get(i);
+            float length = normal.length();
+
+            if (length > Vector3f.EPSILON) {
+                normals.add(normal.normalize());
+            } else {
+                // Если не удалось вычислить нормаль, используем по умолчанию
+                normals.add(new Vector3f(0, 1, 0));
+            }
+        }
+
+        hasValidNormals = true;
+        areNormalsComputed = true;
+
+        System.out.println("Пересчитано нормалей: " + normals.size() +
+                " для " + triangleCount + " треугольников");
+    }
+
+    public void ensureNormalsExist() {
+        if (!areNormalsComputed || normals.isEmpty() || normals.size() != vertices.size()) {
+            recalculateNormals();
         }
     }
 
-    public int getTriangleCount() {
-        return polygons.size(); // После триангуляции каждый полигон - треугольник
-    }
+    // ========== ГЕТТЕРЫ ДЛЯ РЕНДЕРИНГА ==========
 
-    public int getVertexCount() {
-        return vertices.size();
-    }
-
-    // Получить вершину с учетом трансформаций
     public Vector3f getTransformedVertex(int index) {
-        applyTransform(); // Убедимся, что трансформации применены
+        applyTransform();
         if (index >= 0 && index < verticesTransform.size()) {
             return verticesTransform.get(index);
         }
         return null;
     }
 
-    // Получить нормаль для вершины
     public Vector3f getVertexNormal(int index) {
         ensureNormalsExist();
         if (index >= 0 && index < normals.size()) {
             return normals.get(index);
         }
-        return new Vector3f(0, 1, 0); // Дефолтная нормаль
+        return new Vector3f(0, 1, 0);
     }
 
-    // ========== ГЕТТЕРЫ И СЕТТЕРЫ ДЛЯ РЕНДЕРИНГА ==========
+    // ========== РЕЖИМЫ ОТРИСОВКИ ==========
+
     public Vector3f getColor() {
         return color;
     }
@@ -241,7 +232,6 @@ public class Model {
         this.useLighting = useLighting;
     }
 
-    // ========== ТЕКСТУРЫ ==========
     public void setTexture(Texture texture) {
         this.texture = texture;
     }
@@ -251,16 +241,12 @@ public class Model {
     }
 
     public boolean hasTexture() {
-        return texture != null;
+        return texture != null && texture.isValid();
     }
 
-    @Override
-    public String toString() {
-        return String.format("Model[Vertices: %d, Triangles: %d, %s]",
-                vertices.size(), getTriangleCount(), transform.toString());
-    }
+    // ========== ДВУСТОРОННЯЯ ОТРИСОВКА ==========
 
-    private boolean twoSided = false; // По умолчано односторонняя
+    private boolean twoSided = false;
 
     public void setTwoSided(boolean twoSided) {
         this.twoSided = twoSided;
@@ -268,5 +254,32 @@ public class Model {
 
     public boolean isTwoSided() {
         return twoSided;
+    }
+
+    public void resetTransform() {
+        transform.reset();
+        markTransformDirty(); // Помечаем, что трансформации изменились
+        applyTransform(); // Немедленно применяем сброс
+        System.out.println("Model transformations reset to default");
+    }
+
+    // ========== ИНФОРМАЦИЯ ==========
+
+    public int getTriangleCount() {
+        ensureTriangulated();
+        return polygons.size();
+    }
+
+    public int getVertexCount() {
+        return vertices.size();
+    }
+
+    @Override
+    public String toString() {
+        return String.format("Model[Vertices: %d, Triangles: %d, Texture: %s, Lighting: %s, Wireframe: %s]",
+                vertices.size(), getTriangleCount(),
+                hasTexture() ? "Yes" : "No",
+                useLighting ? "Yes" : "No",
+                useWireframe ? "Yes" : "No");
     }
 }

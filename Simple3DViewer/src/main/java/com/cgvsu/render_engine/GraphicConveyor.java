@@ -21,7 +21,6 @@ public class GraphicConveyor {
         });
         Matrix4f rotateMatrix = getRotateMatrix(rotate);
 
-        // Порядок: сначала масштаб, потом поворот, потом перенос
         return translateMatrix.multiplyMatrix(rotateMatrix).multiplyMatrix(scaleMatrix);
     }
 
@@ -58,16 +57,12 @@ public class GraphicConveyor {
     }
 
     public static Matrix4f lookAt(Vector3f eye, Vector3f target, Vector3f up) {
-        // Вектор Z (Forward) - смотрим ОТ цели К глазу для правой системы координат
         Vector3f resultZ = eye.sub(target).normalize();
 
-        // Вектор X (Right) - перпендикулярен Up и Z
         Vector3f resultX = up.cross(resultZ).normalize();
 
-        // Вектор Y (Up) - перпендикулярен Z и X
         Vector3f resultY = resultZ.cross(resultX).normalize();
 
-        // Матрица вида для векторов-столбцов (Translation интегрирован в 4-й столбец)
         float[][] matrix = new float[][]{
                 {resultX.x, resultX.y, resultX.z, -resultX.dot(eye)},
                 {resultY.x, resultY.y, resultY.z, -resultY.dot(eye)},

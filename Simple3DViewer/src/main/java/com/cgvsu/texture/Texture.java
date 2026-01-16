@@ -15,9 +15,11 @@ public class Texture {
                 this.image = new Image(file.toURI().toString());
             } else {
                 System.err.println("Texture file not found: " + filePath);
+                this.image = null;
             }
         } catch (Exception e) {
-            System.err.println("Error loading com.cgvsu.texture: " + e.getMessage());
+            System.err.println("Error loading texture: " + e.getMessage());
+            this.image = null;
         }
     }
 

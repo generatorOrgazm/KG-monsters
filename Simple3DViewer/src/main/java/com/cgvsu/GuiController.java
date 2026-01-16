@@ -1,8 +1,6 @@
 package com.cgvsu;
 
-// ДОБАВЬТЕ ЭТОТ ИМПОРТ:
 import javafx.scene.canvas.GraphicsContext;
-
 import com.cgvsu.model.Model;
 import com.cgvsu.render_engine.Camera;
 import com.cgvsu.render_engine.RenderEngine;
@@ -12,7 +10,7 @@ import com.cgvsu.texture.Texture;
 import javafx.fxml.FXML;
 import javafx.animation.AnimationTimer;
 import javafx.event.ActionEvent;
-import javafx.scene.canvas.Canvas;  // Этот импорт уже есть
+import javafx.scene.canvas.Canvas;
 import javafx.scene.control.*;
 import javafx.scene.layout.AnchorPane;
 import javafx.stage.Stage;
@@ -36,6 +34,7 @@ public class GuiController {
     @FXML
     private Canvas canvas;
 
+    // Режимы отрисовки
     @FXML
     private CheckBox wireframeCheckBox;
 
@@ -48,6 +47,7 @@ public class GuiController {
     @FXML
     private ColorPicker colorPicker;
 
+    // Управление камерами
     @FXML
     private ComboBox<String> cameraComboBox;
 
@@ -59,7 +59,6 @@ public class GuiController {
 
     @FXML
     private Button resetCameraButton;
-
 
     @FXML
     private Slider fovSlider;
@@ -73,12 +72,14 @@ public class GuiController {
     @FXML
     private CheckBox showNormalsCheckBox;
 
+    // Кнопки управления
     @FXML
     private Button optimizeButton;
 
     @FXML
     private Button reloadModelButton;
 
+    // Кнопки движения камеры
     @FXML private Button forwardButton;
     @FXML private Button backwardButton;
     @FXML private Button leftButton;
@@ -94,18 +95,20 @@ public class GuiController {
     private AnimationTimer animationTimer;
     private Scene javafxScene;
     private com.cgvsu.model.Scene scene3D = new com.cgvsu.model.Scene();
-    private long lastUpdateTime = 0;
-    private int frameCount = 0;
 
     // Флаги для оптимизации
     private boolean cameraMoved = false;
-    private long lastRenderTime = 0;
     private Model currentModel = null;
     private String currentModelPath = null;
 
+    // Флаг для отладки (можно включить при необходимости)
+    private static final boolean DEBUG_MODE = false;
+
     @FXML
     private void initialize() {
-        System.out.println("GuiController initializing...");
+        if (DEBUG_MODE) {
+            System.out.println("GuiController initializing...");
+        }
 
         // 1. Инициализация активной камеры
         activeCamera = new Camera(
@@ -137,197 +140,39 @@ public class GuiController {
             }
         });
 
-        // 3. Инициализация ColorPicker
-        colorPicker.setValue(Color.rgb(180, 180, 180));
-        colorPicker.setOnAction(e -> {
-            System.out.println("Color changed");
-            onColorChanged();
-            requestRender();
-        });
+        // 3. Инициализация режимов отрисовки
+        initializeRenderingModes();
 
-        // 4. Инициализация FOV слайдера
-        fovSlider.setValue(activeCamera.getFov());
-        fovLabel.setText(String.format("FOV: %.0f°", fovSlider.getValue()));
+        // 4. Инициализация управления камерами
+        initializeCameraControls();
 
-        fovSlider.valueProperty().addListener((obs, oldVal, newVal) -> {
-            System.out.println("FOV changed to: " + newVal);
-            activeCamera.setFov(newVal.floatValue());
-            fovLabel.setText(String.format("FOV: %.0f°", newVal));
-            requestRender();
-        });
-
-        // 5. Инициализация чекбоксов
-        wireframeCheckBox.setSelected(false);
-        wireframeCheckBox.setOnAction(e -> {
-            System.out.println("Wireframe checkbox: " + wireframeCheckBox.isSelected());
-            onWireframeChanged();
-            requestRender();
-        });
-
-        textureCheckBox.setSelected(false);
-        textureCheckBox.setOnAction(e -> {
-            System.out.println("Texture checkbox: " + textureCheckBox.isSelected());
-            onTextureChanged();
-            requestRender();
-        });
-
-        lightingCheckBox.setSelected(false);
-        lightingCheckBox.setOnAction(e -> {
-            System.out.println("Lighting checkbox: " + lightingCheckBox.isSelected());
-            onLightingChanged();
-            requestRender();
-        });
-
-        showCamerasCheckBox.setSelected(false);
-        showCamerasCheckBox.setOnAction(e -> {
-            System.out.println("Show cameras checkbox: " + showCamerasCheckBox.isSelected());
-            onShowCamerasChanged();
-            requestRender();
-        });
-
-        showNormalsCheckBox.setSelected(false);
-        showNormalsCheckBox.setOnAction(e -> {
-            System.out.println("Show normals checkbox: " + showNormalsCheckBox.isSelected());
-            requestRender();
-        });
-
-        // 6. Инициализация ComboBox для камер
-        updateCameraComboBox();
-        cameraComboBox.setOnAction(e -> {
-            System.out.println("Camera selection changed");
-            onCameraSelected();
-        });
-
-        // 7. Настройка обработчиков для основных кнопок
-        addCameraButton.setOnAction(e -> {
-            System.out.println("Add camera button clicked");
-            onAddCameraButtonClick();
-        });
-
-        removeCameraButton.setOnAction(e -> {
-            System.out.println("Remove camera button clicked");
-            onRemoveCameraButtonClick();
-        });
-
-        resetCameraButton.setOnAction(e -> {
-            System.out.println("Reset camera button clicked");
-            onResetCameraButtonClick();
-        });
-
+        // 5. Настройка обработчиков для основных кнопок
         reloadModelButton.setOnAction(e -> {
-            System.out.println("Reload model button clicked");
+            if (DEBUG_MODE) System.out.println("Reload model button clicked");
             onReloadModelButtonClick();
         });
 
-        // 8. Настройка кнопок движения камеры
-        if (forwardButton != null) {
-            forwardButton.setOnAction(e -> {
-                System.out.println("Forward button clicked");
-                handleCameraForward(null);
-            });
-        }
-        if (backwardButton != null) {
-            backwardButton.setOnAction(e -> {
-                System.out.println("Backward button clicked");
-                handleCameraBackward(null);
-            });
-        }
-        if (leftButton != null) {
-            leftButton.setOnAction(e -> {
-                System.out.println("Left button clicked");
-                handleCameraLeft(null);
-            });
-        }
-        if (rightButton != null) {
-            rightButton.setOnAction(e -> {
-                System.out.println("Right button clicked");
-                handleCameraRight(null);
-            });
-        }
-        if (upButton != null) {
-            upButton.setOnAction(e -> {
-                System.out.println("Up button clicked");
-                handleCameraUp(null);
-            });
-        }
-        if (downButton != null) {
-            downButton.setOnAction(e -> {
-                System.out.println("Down button clicked");
-                handleCameraDown(null);
-            });
-        }
-        if (targetLeftButton != null) {
-            targetLeftButton.setOnAction(e -> {
-                System.out.println("Target left button clicked");
-                handleCameraTargetLeft(null);
-            });
-        }
-        if (targetRightButton != null) {
-            targetRightButton.setOnAction(e -> {
-                System.out.println("Target right button clicked");
-                handleCameraTargetRight(null);
-            });
-        }
-        if (targetUpButton != null) {
-            targetUpButton.setOnAction(e -> {
-                System.out.println("Target up button clicked");
-                handleCameraTargetUp(null);
-            });
-        }
-        if (targetDownButton != null) {
-            targetDownButton.setOnAction(e -> {
-                System.out.println("Target down button clicked");
-                handleCameraTargetDown(null);
-            });
-        }
-
-// Выводим предупреждения если кнопки не найдены
-        if (forwardButton == null) System.out.println("WARNING: forwardButton not found in FXML");
-        if (backwardButton == null) System.out.println("WARNING: backwardButton not found in FXML");
-        if (leftButton == null) System.out.println("WARNING: leftButton not found in FXML");
-        if (rightButton == null) System.out.println("WARNING: rightButton not found in FXML");
-        if (upButton == null) System.out.println("WARNING: upButton not found in FXML");
-        if (downButton == null) System.out.println("WARNING: downButton not found in FXML");
-        if (targetLeftButton == null) System.out.println("WARNING: targetLeftButton not found in FXML");
-        if (targetRightButton == null) System.out.println("WARNING: targetRightButton not found in FXML");
-        if (targetUpButton == null) System.out.println("WARNING: targetUpButton not found in FXML");
-        if (targetDownButton == null) System.out.println("WARNING: targetDownButton not found in FXML");
-
-        // 9. Настройка обработчиков мыши
-        canvas.setOnMousePressed(event -> {
-            System.out.println("Mouse pressed at: " + event.getX() + ", " + event.getY());
-            activeCamera.rotateCamera(event.getX(), event.getY(), false);
-            cameraMoved = true;
-            requestRender();
+        optimizeButton.setOnAction(e -> {
+            if (DEBUG_MODE) System.out.println("Optimize button clicked");
+            onOptimizeButtonClick();
         });
 
-        canvas.setOnMouseDragged(event -> {
-            System.out.println("Mouse dragged to: " + event.getX() + ", " + event.getY());
-            activeCamera.rotateCamera(event.getX(), event.getY(), true);
-            cameraMoved = true;
-            requestRender();
-        });
+        // 6. Настройка кнопок движения камеры
+        setupCameraMovementButtons();
 
-        canvas.setOnScroll(event -> {
-            System.out.println("Mouse scroll: " + event.getDeltaY());
-            float delta = (float) event.getDeltaY() * 0.1f;
-            activeCamera.mouseScrolle(delta);
-            cameraMoved = true;
-            requestRender();
-        });
+        // 7. Настройка обработчиков мыши
+        setupMouseHandlers();
 
-        canvas.setFocusTraversable(true);
-
-        // 10. Настройка горячих клавиш
+        // 8. Настройка горячих клавиш
         anchorPane.sceneProperty().addListener((obs, oldScene, newScene) -> {
             if (newScene != null) {
                 javafxScene = newScene;
                 setupKeyboardShortcuts();
-                System.out.println("Scene loaded, keyboard shortcuts set up");
+                if (DEBUG_MODE) System.out.println("Scene loaded, keyboard shortcuts set up");
             }
         });
 
-        // 11. Запускаем анимационный таймер
+        // 9. Запускаем анимационный таймер
         animationTimer = new AnimationTimer() {
             @Override
             public void handle(long now) {
@@ -336,53 +181,169 @@ public class GuiController {
         };
         animationTimer.start();
 
-        System.out.println("GuiController initialized successfully");
-    }
-
-    private void renderFrame() {
-        long currentTime = System.currentTimeMillis();
-
-
-        double width = canvas.getWidth();
-        double height = canvas.getHeight();
-
-        if (width <= 0 || height <= 0) return;
-
-        // Обновление aspect ratio камеры
-        activeCamera.setAspectRatio((float) (width / height));
-
-        // ОЧИСТКА КАНВАСА (важно!)
-        GraphicsContext gc = canvas.getGraphicsContext2D();
-        gc.clearRect(0, 0, width, height);
-
-        // Фон
-        gc.setFill(Color.LIGHTGRAY);
-        gc.fillRect(0, 0, width, height);
-
-        // Рендеринг
-        if (scene3D.getActiveModel() != null) {
-            System.out.println("Rendering model... Wireframe: " +
-                    scene3D.getActiveModel().isUseWireframe() +
-                    ", Texture: " + scene3D.getActiveModel().isUseTexture() +
-                    ", Has texture: " + scene3D.getActiveModel().hasTexture());
-
-            RenderEngine.render(gc, activeCamera,
-                    scene3D.getActiveModel(), (int) width, (int) height);
-        } else {
-            // Если нет модели, показываем инструкцию
-            gc.setFill(Color.BLACK);
-            gc.fillText("No model loaded. Use File -> Load Model", 20, 30);
-            gc.fillText("Controls: Mouse Drag = Rotate, Mouse Wheel = Zoom", 20, 50);
-            gc.fillText("Arrow Keys = Move Camera, W/S = Move Up/Down", 20, 70);
+        if (DEBUG_MODE) {
+            System.out.println("GuiController initialized successfully");
         }
-
-        lastRenderTime = currentTime;
     }
 
-    private void requestRender() {
-        lastRenderTime = 0; // Принудительно рендерим следующий кадр
+    /**
+     * Инициализация режимов отрисовки
+     */
+    private void initializeRenderingModes() {
+        // Цвет модели
+        colorPicker.setValue(Color.rgb(180, 180, 180));
+        colorPicker.setOnAction(e -> {
+            if (DEBUG_MODE) System.out.println("Color changed");
+            onColorChanged();
+            requestRender();
+        });
+
+        // Полигональная сетка
+        wireframeCheckBox.setSelected(false);
+        wireframeCheckBox.setOnAction(e -> {
+            if (DEBUG_MODE) System.out.println("Wireframe checkbox: " + wireframeCheckBox.isSelected());
+            onWireframeChanged();
+            requestRender();
+        });
+
+        // Текстура
+        textureCheckBox.setSelected(false);
+        textureCheckBox.setOnAction(e -> {
+            if (DEBUG_MODE) System.out.println("Texture checkbox: " + textureCheckBox.isSelected());
+            onTextureChanged();
+            requestRender();
+        });
+
+        // Освещение
+        lightingCheckBox.setSelected(false);
+        lightingCheckBox.setOnAction(e -> {
+            if (DEBUG_MODE) System.out.println("Lighting checkbox: " + lightingCheckBox.isSelected());
+            onLightingChanged();
+            requestRender();
+        });
+
+        // Нормали
+        showNormalsCheckBox.setSelected(false);
+        showNormalsCheckBox.setOnAction(e -> {
+            if (DEBUG_MODE) System.out.println("Show normals checkbox: " + showNormalsCheckBox.isSelected());
+            requestRender();
+        });
     }
 
+    /**
+     * Инициализация управления камерами
+     */
+    private void initializeCameraControls() {
+        // FOV слайдер
+        fovSlider.setValue(activeCamera.getFov());
+        fovLabel.setText(String.format("FOV: %.0f°", fovSlider.getValue()));
+
+        fovSlider.valueProperty().addListener((obs, oldVal, newVal) -> {
+            if (DEBUG_MODE) System.out.println("FOV changed to: " + newVal);
+            activeCamera.setFov(newVal.floatValue());
+            fovLabel.setText(String.format("FOV: %.0f°", newVal));
+            requestRender();
+        });
+
+        // Отображение камер
+        showCamerasCheckBox.setSelected(false);
+        showCamerasCheckBox.setOnAction(e -> {
+            if (DEBUG_MODE) System.out.println("Show cameras checkbox: " + showCamerasCheckBox.isSelected());
+            onShowCamerasChanged();
+            requestRender();
+        });
+
+        // ComboBox для камер
+        updateCameraComboBox();
+        cameraComboBox.setOnAction(e -> {
+            if (DEBUG_MODE) System.out.println("Camera selection changed");
+            onCameraSelected();
+        });
+
+        // Кнопки управления камерами
+        addCameraButton.setOnAction(e -> {
+            if (DEBUG_MODE) System.out.println("Add camera button clicked");
+            onAddCameraButtonClick();
+        });
+
+        removeCameraButton.setOnAction(e -> {
+            if (DEBUG_MODE) System.out.println("Remove camera button clicked");
+            onRemoveCameraButtonClick();
+        });
+
+        resetCameraButton.setOnAction(e -> {
+            if (DEBUG_MODE) System.out.println("Reset camera button clicked");
+            onResetCameraButtonClick();
+        });
+    }
+
+    /**
+     * Настройка кнопок движения камеры
+     */
+    private void setupCameraMovementButtons() {
+        if (forwardButton != null) {
+            forwardButton.setOnAction(e -> handleCameraForward(null));
+        }
+        if (backwardButton != null) {
+            backwardButton.setOnAction(e -> handleCameraBackward(null));
+        }
+        if (leftButton != null) {
+            leftButton.setOnAction(e -> handleCameraLeft(null));
+        }
+        if (rightButton != null) {
+            rightButton.setOnAction(e -> handleCameraRight(null));
+        }
+        if (upButton != null) {
+            upButton.setOnAction(e -> handleCameraUp(null));
+        }
+        if (downButton != null) {
+            downButton.setOnAction(e -> handleCameraDown(null));
+        }
+        if (targetLeftButton != null) {
+            targetLeftButton.setOnAction(e -> handleCameraTargetLeft(null));
+        }
+        if (targetRightButton != null) {
+            targetRightButton.setOnAction(e -> handleCameraTargetRight(null));
+        }
+        if (targetUpButton != null) {
+            targetUpButton.setOnAction(e -> handleCameraTargetUp(null));
+        }
+        if (targetDownButton != null) {
+            targetDownButton.setOnAction(e -> handleCameraTargetDown(null));
+        }
+    }
+
+    /**
+     * Настройка обработчиков мыши
+     */
+    private void setupMouseHandlers() {
+        canvas.setOnMousePressed(event -> {
+            if (DEBUG_MODE) System.out.println("Mouse pressed at: " + event.getX() + ", " + event.getY());
+            activeCamera.rotateCamera(event.getX(), event.getY(), false);
+            cameraMoved = true;
+            requestRender();
+        });
+
+        canvas.setOnMouseDragged(event -> {
+            activeCamera.rotateCamera(event.getX(), event.getY(), true);
+            cameraMoved = true;
+            requestRender();
+        });
+
+        canvas.setOnScroll(event -> {
+            if (DEBUG_MODE) System.out.println("Mouse scroll: " + event.getDeltaY());
+            float delta = (float) event.getDeltaY() * 0.1f;
+            activeCamera.mouseScrolle(delta);
+            cameraMoved = true;
+            requestRender();
+        });
+
+        canvas.setFocusTraversable(true);
+    }
+
+    /**
+     * Настройка горячих клавиш
+     */
     private void setupKeyboardShortcuts() {
         if (javafxScene == null) return;
 
@@ -479,217 +440,55 @@ public class GuiController {
         });
     }
 
-    @FXML
-    private void onOpenModelMenuItemClick() {
-        FileChooser fileChooser = new FileChooser();
-        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Model (*.obj)", "*.obj"));
-        fileChooser.setTitle("Load 3D Model");
-        fileChooser.setInitialDirectory(new File(System.getProperty("user.home")));
+    // ========== ОСНОВНОЙ МЕТОД РЕНДЕРИНГА ==========
 
-        File file = fileChooser.showOpenDialog(getStage());
-        if (file == null) {
-            return;
-        }
+    private void renderFrame() {
+        double width = canvas.getWidth();
+        double height = canvas.getHeight();
 
-        try {
-            System.out.println("Loading model: " + file.getAbsolutePath());
-            String fileContent = Files.readString(file.toPath());
-            Model newModel = ObjReader.read(fileContent);
+        if (width <= 0 || height <= 0) return;
 
-            // Сохраняем путь для возможной перезагрузки
-            currentModelPath = file.getAbsolutePath();
-            currentModel = newModel;
+        // Обновление aspect ratio камеры
+        activeCamera.setAspectRatio((float) (width / height));
 
-            // Очищаем старые модели и добавляем новую
-            scene3D.getModels().clear();
-            scene3D.addModel(newModel);
-
-            // Применяем текущие настройки
-            applySettingsToModel(newModel);
-
-            System.out.println("Model loaded successfully. Vertices: " + newModel.vertices.size() +
-                    ", Polygons: " + newModel.polygons.size());
-
-            showInfoAlert("Model Loaded",
-                    String.format("Model '%s' loaded successfully!\n\nVertices: %d\nTriangles: %d",
-                            file.getName(),
-                            newModel.vertices.size(),
-                            newModel.polygons.size()));
-
-            requestRender();
-
-        } catch (IOException e) {
-            showErrorAlert("File Error", "Cannot read file: " + e.getMessage());
-            e.printStackTrace();
-        } catch (Exception e) {
-            showErrorAlert("Model Error", "Failed to parse model: " + e.getMessage());
-            e.printStackTrace();
-        }
-    }
-
-    private Stage getStage() {
-        return (Stage) canvas.getScene().getWindow();
-    }
-
-    @FXML
-    private void onLoadTextureMenuItemClick() {
-        if (scene3D.getActiveModel() == null) {
-            showErrorAlert("No Model", "Please load a model first");
-            return;
-        }
-
-        FileChooser fileChooser = new FileChooser();
-        fileChooser.getExtensionFilters().add(
-                new FileChooser.ExtensionFilter("Image Files", "*.png", "*.jpg", "*.jpeg", "*.bmp")
-        );
-        fileChooser.setTitle("Load Texture");
-        fileChooser.setInitialDirectory(new File(System.getProperty("user.home")));
-
-        File file = fileChooser.showOpenDialog(getStage());
-        if (file != null) {
-            try {
-                System.out.println("Loading texture from: " + file.getAbsolutePath());
-
-                // Проверяем существование файла
-                if (!file.exists()) {
-                    showErrorAlert("File Error", "File does not exist: " + file.getAbsolutePath());
-                    return;
-                }
-
-                // Загружаем текстуру
-                Texture texture = new Texture(file.getAbsolutePath());
-
-                // Проверяем загрузку
-                if (texture == null) {
-                    showErrorAlert("Texture Error", "Failed to create texture object");
-                    return;
-                }
-
-                if (texture.getImage() == null) {
-                    showErrorAlert("Texture Error", "Failed to load image from file");
-                    return;
-                }
-
-                System.out.println("Texture loaded successfully. Size: " +
-                        texture.getWidth() + "x" + texture.getHeight());
-
-                // Устанавливаем текстуру
-                Model activeModel = scene3D.getActiveModel();
-                activeModel.setTexture(texture);
-                textureCheckBox.setSelected(true);
-                activeModel.setUseTexture(true);
-
-                // Принудительно обновляем рендеринг
-                requestRender();
-
-                showInfoAlert("Texture Loaded",
-                        String.format("Texture loaded successfully!\n\nFile: %s\nSize: %dx%d",
-                                file.getName(),
-                                texture.getWidth(),
-                                texture.getHeight()));
-
-            } catch (Exception e) {
-                showErrorAlert("Texture Error", "Failed to load texture: " + e.getMessage());
-                e.printStackTrace();
-            }
-        }
-    }
-
-    @FXML
-    private void onExportModelMenuItemClick() {
-        if (scene3D.getActiveModel() == null) {
-            showErrorAlert("No Model", "Please load a model first");
-            return;
-        }
-
-        FileChooser fileChooser = new FileChooser();
-        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("OBJ File", "*.obj"));
-        fileChooser.setTitle("Export Model");
-        fileChooser.setInitialFileName("exported_model.obj");
-
-        File file = fileChooser.showSaveDialog(getStage());
-        if (file != null) {
-            try {
-                // TODO: Реализовать экспорт модели в OBJ формат
-                // ModelExporter.export(scene3D.getActiveModel(), file);
-                showInfoAlert("Export", "Model export not implemented yet");
-            } catch (Exception e) {
-                showErrorAlert("Export Error", "Failed to export model: " + e.getMessage());
-            }
-        }
-    }
-
-    @FXML
-    private void onClearSceneMenuItemClick() {
-        if (scene3D.getModels().isEmpty()) {
-            return;
-        }
-
-        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-        alert.setTitle("Clear Scene");
-        alert.setHeaderText("Clear all models?");
-        alert.setContentText("This will remove all loaded models from the scene.");
-
-        Optional<ButtonType> result = alert.showAndWait();
-        if (result.isPresent() && result.get() == ButtonType.OK) {
-            scene3D.getModels().clear();
-            currentModel = null;
-            currentModelPath = null;
-            requestRender();
-            showInfoAlert("Scene Cleared", "All models removed from scene");
-        }
-    }
-
-    @FXML
-    private void onToggleFullscreen() {
-        Stage stage = getStage();
-        stage.setFullScreen(!stage.isFullScreen());
-    }
-
-    @FXML
-    private void onResetAllTransformations() {
+        // Рендеринг
         if (scene3D.getActiveModel() != null) {
-            scene3D.getActiveModel().resetTransform();
-            requestRender();
-            showInfoAlert("Transformations Reset", "Model transformations have been reset to default");
+            // Применяем настройки к модели
+            applySettingsToModel(scene3D.getActiveModel());
+
+            // Подготавливаем модель к отрисовке
+            scene3D.getActiveModel().prepareForRendering();
+
+            // Выполняем рендеринг
+            GraphicsContext gc = canvas.getGraphicsContext2D();
+            RenderEngine.render(gc, activeCamera, scene3D.getActiveModel(),
+                    (int) width, (int) height);
+        } else {
+            // Если нет модели, показываем инструкцию
+            GraphicsContext gc = canvas.getGraphicsContext2D();
+            gc.clearRect(0, 0, width, height);
+            gc.setFill(Color.LIGHTGRAY);
+            gc.fillRect(0, 0, width, height);
+
+            gc.setFill(Color.BLACK);
+            gc.fillText("No model loaded. Use File -> Load Model", 20, 30);
+            gc.fillText("Controls:", 20, 60);
+            gc.fillText("• Mouse Drag = Rotate camera", 20, 80);
+            gc.fillText("• Mouse Wheel = Zoom", 20, 100);
+            gc.fillText("• Arrow Keys = Move camera", 20, 120);
+            gc.fillText("• W/S = Move up/down", 20, 140);
+            gc.fillText("• A/D/Q/E = Move target", 20, 160);
+            gc.fillText("• 1/2/3 = Toggle rendering modes", 20, 180);
+            gc.fillText("• R = Reset transformations", 20, 200);
         }
     }
 
-
-    @FXML
-    private void onAboutMenuItemClick() {
-        String about = """
-            Simple 3D Viewer v1.0
-            
-            Features:
-            • OBJ model loading
-            • Triangulation and normals
-            • Z-buffer depth testing
-            • Texture mapping
-            • Lighting
-            • Multiple rendering modes
-            • Multiple camera support
-            
-            Controls:
-            • Mouse Drag - Rotate camera
-            • Mouse Wheel - Zoom
-            • Arrow Keys - Move camera
-            • W/S - Move up/down
-            • A/D/Q/E - Move target
-            • 1/2/3 - Toggle rendering modes
-            • R - Reset transformations
-            • Ctrl+O - Load model
-            • Ctrl+T - Load texture
-            
-            """;
-
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle("About Simple 3D Viewer");
-        alert.setHeaderText("Simple 3D Viewer v1.0");
-        alert.setContentText(about);
-        alert.getDialogPane().setPrefSize(400, 500);
-        alert.showAndWait();
+    private void requestRender() {
+        // В данном случае рендеринг происходит каждый кадр,
+        // так что этот метод просто помечает необходимость обновления
     }
+
+    // ========== ОБРАБОТЧИКИ РЕЖИМОВ ОТРИСОВКИ ==========
 
     @FXML
     private void onWireframeChanged() {
@@ -708,7 +507,7 @@ public class GuiController {
             if (useTexture && !scene3D.getActiveModel().hasTexture()) {
                 Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
                 alert.setTitle("No Texture");
-                alert.setHeaderText("Model has no texture");
+                alert.setHeaderText("Model has no texture loaded");
                 alert.setContentText("Do you want to load a texture now?");
 
                 Optional<ButtonType> result = alert.showAndWait();
@@ -744,9 +543,11 @@ public class GuiController {
         }
     }
 
+    // ========== УПРАВЛЕНИЕ КАМЕРАМИ ==========
+
     @FXML
     private void onShowCamerasChanged() {
-        // Реализация отображения камер будет позже
+        // TODO: Реализация отображения камер как 3D объектов
         requestRender();
     }
 
@@ -770,7 +571,8 @@ public class GuiController {
         cameraComboBox.getSelectionModel().select(scene3D.getCameras().size() - 1);
         onCameraSelected();
 
-        showInfoAlert("Camera Added", "New camera added to scene");
+        showInfoAlert("Camera Added", "New camera added to scene. Total cameras: " +
+                scene3D.getCameras().size());
     }
 
     @FXML
@@ -786,7 +588,8 @@ public class GuiController {
             cameraComboBox.getSelectionModel().select(selectedIndex);
             onCameraSelected();
 
-            showInfoAlert("Camera Removed", "Camera removed from scene");
+            showInfoAlert("Camera Removed", "Camera removed from scene. Total cameras: " +
+                    scene3D.getCameras().size());
         } else if (scene3D.getCameras().size() <= 1) {
             showErrorAlert("Cannot Remove", "Cannot remove the last camera");
         }
@@ -811,54 +614,6 @@ public class GuiController {
         }
     }
 
-    @FXML
-    private void onReloadModelButtonClick() {
-        if (currentModelPath == null) {
-            showErrorAlert("No Model", "No model to reload");
-            return;
-        }
-
-        try {
-            String fileContent = Files.readString(Path.of(currentModelPath));
-            Model newModel = ObjReader.read(fileContent);
-
-            // Сохраняем текущие настройки
-            boolean wireframe = wireframeCheckBox.isSelected();
-            boolean texture = textureCheckBox.isSelected();
-            boolean lighting = lightingCheckBox.isSelected();
-            Color color = colorPicker.getValue();
-
-            // Заменяем модель
-            scene3D.getModels().clear();
-            scene3D.addModel(newModel);
-            currentModel = newModel;
-
-            // Восстанавливаем настройки
-            applySettingsToModel(newModel);
-
-            requestRender();
-            showInfoAlert("Model Reloaded", "Model reloaded successfully");
-
-        } catch (Exception e) {
-            showErrorAlert("Reload Error", "Failed to reload model: " + e.getMessage());
-        }
-    }
-
-    private void applySettingsToModel(Model model) {
-        if (model == null) return;
-
-        model.setUseWireframe(wireframeCheckBox.isSelected());
-        model.setUseTexture(textureCheckBox.isSelected());
-        model.setUseLighting(lightingCheckBox.isSelected());
-
-        Color color = colorPicker.getValue();
-        model.setColor(new Vector3f(
-                (float) color.getRed(),
-                (float) color.getGreen(),
-                (float) color.getBlue()
-        ));
-    }
-
     private void updateCameraComboBox() {
         cameraComboBox.getItems().clear();
         for (int i = 0; i < scene3D.getCameras().size(); i++) {
@@ -876,7 +631,8 @@ public class GuiController {
         }
     }
 
-    // Методы движения камеры
+    // ========== МЕТОДЫ ДВИЖЕНИЯ КАМЕРЫ ==========
+
     @FXML
     public void handleCameraForward(ActionEvent actionEvent) {
         activeCamera.movePosition(new Vector3f(0, 0, -TRANSLATION));
@@ -946,6 +702,419 @@ public class GuiController {
         cameraMoved = true;
         requestRender();
     }
+    @FXML
+    private void onOpenModelMenuItemClick() {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Model (*.obj)", "*.obj"));
+        fileChooser.setTitle("Load 3D Model");
+        fileChooser.setInitialDirectory(new File(System.getProperty("user.home")));
+
+        File file = fileChooser.showOpenDialog(getStage());
+        if (file == null) {
+            return;
+        }
+
+        try {
+            System.out.println("Loading model: " + file.getAbsolutePath());
+            String fileContent = Files.readString(file.toPath());
+            Model newModel = ObjReader.read(fileContent);
+
+            // ОТЛАДКА ТЕКСТУР - добавить в начало
+            System.out.println("\n=== TEXTURE DEBUG INFO ===");
+            System.out.println("Model: " + file.getName());
+            System.out.println("Texture vertices count: " + newModel.textureVertices.size());
+            System.out.println("Polygons count: " + newModel.polygons.size());
+
+            // Анализ UV координат
+            if (!newModel.textureVertices.isEmpty()) {
+                float minU = Float.MAX_VALUE;
+                float maxU = Float.MIN_VALUE;
+                float minV = Float.MAX_VALUE;
+                float maxV = Float.MIN_VALUE;
+
+                for (var uv : newModel.textureVertices) {
+                    minU = Math.min(minU, uv.x);
+                    maxU = Math.max(maxU, uv.x);
+                    minV = Math.min(minV, uv.y);
+                    maxV = Math.max(maxV, uv.y);
+                }
+
+                System.out.println("UV Range: U[" + minU + " - " + maxU + "], V[" + minV + " - " + maxV + "]");
+
+                // Проверяем первые несколько UV координат
+                System.out.println("\nFirst 10 UV coordinates:");
+                for (int i = 0; i < Math.min(10, newModel.textureVertices.size()); i++) {
+                    var uv = newModel.textureVertices.get(i);
+                    System.out.println("  UV[" + i + "]: (" + uv.x + ", " + uv.y + ")");
+                }
+
+                // Проверяем первые несколько полигонов
+                System.out.println("\nFirst 3 polygons texture indices:");
+                for (int i = 0; i < Math.min(3, newModel.polygons.size()); i++) {
+                    var polygon = newModel.polygons.get(i);
+                    var texIndices = polygon.getTextureVertexIndices();
+                    if (!texIndices.isEmpty()) {
+                        System.out.print("Polygon " + i + " texture indices: ");
+                        for (int texIdx : texIndices) {
+                            System.out.print(texIdx + " ");
+                        }
+                        System.out.println();
+                    }
+                }
+            }
+            System.out.println("=== END DEBUG ===\n");
+
+            // Сохраняем путь для возможной перезагрузки
+            currentModelPath = file.getAbsolutePath();
+            currentModel = newModel;
+
+            // Очищаем старые модели и добавляем новую
+            scene3D.getModels().clear();
+            scene3D.addModel(newModel);
+
+            // Применяем текущие настройки
+            applySettingsToModel(newModel);
+
+            System.out.println("Model loaded successfully. Vertices: " + newModel.vertices.size() +
+                    ", Polygons: " + newModel.polygons.size() +
+                    ", Texture vertices: " + newModel.textureVertices.size());
+
+            // Автоматически пытаемся найти текстуру
+            autoFindTexture(file, newModel);
+
+            showInfoAlert("Model Loaded",
+                    String.format("Model '%s' loaded successfully!\n\nVertices: %d\nTriangles: %d\nTexture vertices: %d",
+                            file.getName(),
+                            newModel.vertices.size(),
+                            newModel.getTriangleCount(),
+                            newModel.textureVertices.size()));
+
+            requestRender();
+
+        } catch (IOException e) {
+            showErrorAlert("File Error", "Cannot read file: " + e.getMessage());
+            e.printStackTrace();
+        } catch (Exception e) {
+            showErrorAlert("Model Error", "Failed to parse model: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Автоматический поиск текстуры для модели
+     */
+    private void autoFindTexture(File modelFile, Model model) {
+        if (model.textureVertices.isEmpty()) {
+            System.out.println("Model has no texture coordinates, skipping texture search");
+            return;
+        }
+
+        String modelPath = modelFile.getAbsolutePath();
+        String modelDir = modelFile.getParent();
+        String modelName = modelFile.getName();
+
+        // Убираем расширение .obj
+        String baseName = modelName.replace(".obj", "").replace(".OBJ", "");
+
+        // Возможные имена текстурных файлов
+        String[] possibleExtensions = {".png", ".jpg", ".jpeg", ".bmp", ".tga"};
+        String[] possibleNames = {
+                baseName + ".png",
+                baseName + ".jpg",
+                baseName + "_texture.png",
+                baseName + "_diffuse.png",
+                "texture.png",
+                "diffuse.png"
+        };
+
+        System.out.println("Searching for texture for model: " + baseName);
+
+        // Сначала ищем в той же директории
+        for (String textureName : possibleNames) {
+            for (String ext : possibleExtensions) {
+                if (textureName.toLowerCase().endsWith(ext)) {
+                    File textureFile = new File(modelDir, textureName);
+                    if (textureFile.exists()) {
+                        loadTextureFile(textureFile, model);
+                        return;
+                    }
+                }
+            }
+        }
+
+        // Если не нашли, пробуем с разными расширениями
+        for (String ext : possibleExtensions) {
+            File textureFile = new File(modelDir, baseName + ext);
+            if (textureFile.exists()) {
+                loadTextureFile(textureFile, model);
+                return;
+            }
+        }
+
+        System.out.println("No texture found automatically for model: " + baseName);
+    }
+
+    /**
+     * Загрузка текстуры из файла
+     */
+    private void loadTextureFile(File textureFile, Model model) {
+        try {
+            System.out.println("Found texture: " + textureFile.getAbsolutePath());
+
+            Texture texture = new Texture(textureFile.getAbsolutePath());
+
+            if (texture != null && texture.isValid()) {
+                model.setTexture(texture);
+                textureCheckBox.setSelected(true);
+                model.setUseTexture(true);
+
+                System.out.println("Texture loaded successfully: " +
+                        texture.getWidth() + "x" + texture.getHeight());
+
+                showInfoAlert("Texture Auto-Loaded",
+                        String.format("Texture '%s' loaded automatically!\n\nSize: %dx%d",
+                                textureFile.getName(),
+                                texture.getWidth(),
+                                texture.getHeight()));
+
+                requestRender();
+            }
+        } catch (Exception e) {
+            System.out.println("Failed to auto-load texture: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Применение настроек к модели
+     */
+
+
+    @FXML
+    private void onLoadTextureMenuItemClick() {
+        if (scene3D.getActiveModel() == null) {
+            showErrorAlert("No Model", "Please load a model first");
+            return;
+        }
+
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.getExtensionFilters().add(
+                new FileChooser.ExtensionFilter("Image Files", "*.png", "*.jpg", "*.jpeg", "*.bmp")
+        );
+        fileChooser.setTitle("Load Texture");
+        fileChooser.setInitialDirectory(new File(System.getProperty("user.home")));
+
+        File file = fileChooser.showOpenDialog(getStage());
+        if (file != null) {
+            try {
+                if (DEBUG_MODE) {
+                    System.out.println("Loading texture from: " + file.getAbsolutePath());
+                }
+
+                // Проверяем существование файла
+                if (!file.exists()) {
+                    showErrorAlert("File Error", "File does not exist: " + file.getAbsolutePath());
+                    return;
+                }
+
+                // Загружаем текстуру
+                Texture texture = new Texture(file.getAbsolutePath());
+
+                // Проверяем загрузку
+                if (texture == null) {
+                    showErrorAlert("Texture Error", "Failed to create texture object");
+                    return;
+                }
+
+                if (texture.getImage() == null) {
+                    showErrorAlert("Texture Error", "Failed to load image from file");
+                    return;
+                }
+
+                if (DEBUG_MODE) {
+                    System.out.println("Texture loaded successfully. Size: " +
+                            texture.getWidth() + "x" + texture.getHeight());
+                }
+
+                // Устанавливаем текстуру
+                Model activeModel = scene3D.getActiveModel();
+                activeModel.setTexture(texture);
+                textureCheckBox.setSelected(true);
+                activeModel.setUseTexture(true);
+
+                // Принудительно обновляем рендеринг
+                requestRender();
+
+                showInfoAlert("Texture Loaded",
+                        String.format("Texture loaded successfully!\n\nFile: %s\nSize: %dx%d",
+                                file.getName(),
+                                texture.getWidth(),
+                                texture.getHeight()));
+
+            } catch (Exception e) {
+                showErrorAlert("Texture Error", "Failed to load texture: " + e.getMessage());
+                if (DEBUG_MODE) e.printStackTrace();
+            }
+        }
+    }
+
+    @FXML
+    private void onExportModelMenuItemClick() {
+        if (scene3D.getActiveModel() == null) {
+            showErrorAlert("No Model", "Please load a model first");
+            return;
+        }
+
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("OBJ File", "*.obj"));
+        fileChooser.setTitle("Export Model");
+        fileChooser.setInitialFileName("exported_model.obj");
+
+        File file = fileChooser.showSaveDialog(getStage());
+        if (file != null) {
+            try {
+                // TODO: Реализовать экспорт модели в OBJ формат
+                showInfoAlert("Export", "Model export not implemented yet");
+            } catch (Exception e) {
+                showErrorAlert("Export Error", "Failed to export model: " + e.getMessage());
+            }
+        }
+    }
+
+    @FXML
+    private void onClearSceneMenuItemClick() {
+        if (scene3D.getModels().isEmpty()) {
+            return;
+        }
+
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+        alert.setTitle("Clear Scene");
+        alert.setHeaderText("Clear all models?");
+        alert.setContentText("This will remove all loaded models from the scene.");
+
+        Optional<ButtonType> result = alert.showAndWait();
+        if (result.isPresent() && result.get() == ButtonType.OK) {
+            scene3D.getModels().clear();
+            currentModel = null;
+            currentModelPath = null;
+            requestRender();
+            showInfoAlert("Scene Cleared", "All models removed from scene");
+        }
+    }
+
+    // ========== ВСПОМОГАТЕЛЬНЫЕ МЕТОДЫ ==========
+
+    @FXML
+    private void onToggleFullscreen() {
+        Stage stage = getStage();
+        stage.setFullScreen(!stage.isFullScreen());
+    }
+
+    @FXML
+    private void onResetAllTransformations() {
+        if (scene3D.getActiveModel() != null) {
+            scene3D.getActiveModel().resetTransform();
+            requestRender();
+            showInfoAlert("Transformations Reset", "Model transformations have been reset to default");
+        }
+    }
+
+    @FXML
+    private void onOptimizeButtonClick() {
+        // TODO: Реализовать оптимизации производительности
+        showInfoAlert("Optimization", "Performance optimization features will be implemented soon");
+    }
+
+    @FXML
+    private void onReloadModelButtonClick() {
+        if (currentModelPath == null) {
+            showErrorAlert("No Model", "No model to reload");
+            return;
+        }
+
+        try {
+            String fileContent = Files.readString(Path.of(currentModelPath));
+            Model newModel = ObjReader.read(fileContent);
+
+            // Сохраняем текущие настройки
+            boolean wireframe = wireframeCheckBox.isSelected();
+            boolean texture = textureCheckBox.isSelected();
+            boolean lighting = lightingCheckBox.isSelected();
+            Color color = colorPicker.getValue();
+
+            // Заменяем модель
+            scene3D.getModels().clear();
+            scene3D.addModel(newModel);
+            currentModel = newModel;
+
+            // Восстанавливаем настройки
+            applySettingsToModel(newModel);
+
+            requestRender();
+            showInfoAlert("Model Reloaded", "Model reloaded successfully");
+
+        } catch (Exception e) {
+            showErrorAlert("Reload Error", "Failed to reload model: " + e.getMessage());
+        }
+    }
+
+    @FXML
+    private void onAboutMenuItemClick() {
+        String about = """
+            Simple 3D Viewer v1.0
+            
+            Features:
+            • OBJ model loading
+            • Triangulation and normals calculation
+            • Z-buffer depth testing
+            • Texture mapping
+            • Lighting
+            • Multiple rendering modes
+            • Multiple camera support
+            
+            Rendering Modes:
+            • 1 - Toggle wireframe
+            • 2 - Toggle texture
+            • 3 - Toggle lighting
+            
+            Controls:
+            • Mouse Drag - Rotate camera
+            • Mouse Wheel - Zoom
+            • Arrow Keys - Move camera
+            • W/S - Move up/down
+            • A/D/Q/E - Move target
+            • R - Reset transformations
+            • Ctrl+O - Load model
+            • Ctrl+T - Load texture
+            • Delete - Clear scene
+            
+            """;
+
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle("About Simple 3D Viewer");
+        alert.setHeaderText("Simple 3D Viewer v1.0");
+        alert.setContentText(about);
+        alert.getDialogPane().setPrefSize(400, 500);
+        alert.showAndWait();
+    }
+
+    private void applySettingsToModel(Model model) {
+        if (model == null) return;
+
+        model.setUseWireframe(wireframeCheckBox.isSelected());
+        model.setUseTexture(textureCheckBox.isSelected());
+        model.setUseLighting(lightingCheckBox.isSelected());
+
+        Color color = colorPicker.getValue();
+        model.setColor(new Vector3f(
+                (float) color.getRed(),
+                (float) color.getGreen(),
+                (float) color.getBlue()
+        ));
+    }
+
+    private Stage getStage() {
+        return (Stage) canvas.getScene().getWindow();
+    }
 
     private void showErrorAlert(String title, String content) {
         Alert alert = new Alert(Alert.AlertType.ERROR);
@@ -962,6 +1131,79 @@ public class GuiController {
         alert.setContentText(content);
         alert.showAndWait();
     }
+
+    @FXML
+    private void onDebugTextureInfo() {
+        if (scene3D.getActiveModel() != null) {
+            Model model = scene3D.getActiveModel();
+
+            System.out.println("\n=== CURRENT MODEL TEXTURE INFO ===");
+            System.out.println("Has texture object: " + model.hasTexture());
+            System.out.println("Use texture flag: " + model.isUseTexture());
+            System.out.println("Texture vertices: " + model.textureVertices.size());
+            System.out.println("Polygons: " + model.polygons.size());
+
+            if (!model.textureVertices.isEmpty()) {
+                // Статистика UV координат
+                int outOfRange = 0;
+                int negativeU = 0;
+                int negativeV = 0;
+                int largeU = 0;
+                int largeV = 0;
+
+                for (var uv : model.textureVertices) {
+                    if (uv.x < 0 || uv.x > 1) outOfRange++;
+                    if (uv.x < 0) negativeU++;
+                    if (uv.x > 1) largeU++;
+                    if (uv.y < 0) negativeV++;
+                    if (uv.y > 1) largeV++;
+                }
+
+                System.out.println("UV Statistics:");
+                System.out.println("  Out of [0,1] range: " + outOfRange + "/" + model.textureVertices.size());
+                System.out.println("  Negative U: " + negativeU);
+                System.out.println("  U > 1: " + largeU);
+                System.out.println("  Negative V: " + negativeV);
+                System.out.println("  V > 1: " + largeV);
+
+                // Показываем проблемные UV координаты
+                if (outOfRange > 0) {
+                    System.out.println("\nProblematic UV coordinates (first 10):");
+                    int count = 0;
+                    for (int i = 0; i < model.textureVertices.size() && count < 10; i++) {
+                        var uv = model.textureVertices.get(i);
+                        if (uv.x < 0 || uv.x > 1 || uv.y < 0 || uv.y > 1) {
+                            System.out.println("  UV[" + i + "]: (" + uv.x + ", " + uv.y + ")");
+                            count++;
+                        }
+                    }
+                }
+            }
+
+            // Проверяем соответствие индексов
+            int missingTextureIndices = 0;
+            for (var polygon : model.polygons) {
+                var texIndices = polygon.getTextureVertexIndices();
+                var vertIndices = polygon.getVertexIndices();
+
+                if (vertIndices.size() != texIndices.size() && !texIndices.isEmpty()) {
+                    missingTextureIndices++;
+                }
+            }
+
+            if (missingTextureIndices > 0) {
+                System.out.println("Warning: " + missingTextureIndices + " polygons have mismatched vertex/texture indices");
+            }
+
+            System.out.println("=== END DEBUG ===\n");
+
+            showInfoAlert("Texture Debug", "Texture information printed to console. Check the terminal for details.");
+        } else {
+            showErrorAlert("No Model", "Please load a model first");
+        }
+    }
+
+
 
     // Геттеры для тестирования
     public com.cgvsu.model.Scene getScene3D() {
