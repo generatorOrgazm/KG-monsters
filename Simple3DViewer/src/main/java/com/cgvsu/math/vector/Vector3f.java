@@ -30,22 +30,26 @@ public class Vector3f {
         return new Vector3f(this.x - other.x, this.y - other.y, this.z - other.z);
     }
 
+    // Исправляем метод multiply - ДВА варианта:
+    // Вариант 1: статический метод (как был)
     public static Vector3f multiply(Vector3f v, float k) {
         return new Vector3f(v.getX() * k, v.getY() * k, v.getZ() * k);
     }
 
-//
-//    public static Vector3f divide(Vector3f v, float k) {
-//        if (k < EPSILON) {
-//            throw new IllegalArgumentException("Ошибка: Деление на 0");
-//        }
-//        return new Vector3f(v.getX() / k, v.getY() / k, v.getZ() / k);
-//    }
+    // Вариант 2: нестатический метод (для использования как v.multiply(k))
+    public Vector3f multiply(float k) {
+        return new Vector3f(this.x * k, this.y * k, this.z * k);
+    }
 
-
+    public Vector3f divide(float k) {
+        if (Math.abs(k) < EPSILON) {
+            throw new IllegalArgumentException("Ошибка: Деление на 0");
+        }
+        return new Vector3f(this.x / k, this.y / k, this.z / k);
+    }
 
     public Vector3f normalize() {
-        float len = this.length();  // Вызываем length() у этого вектора
+        float len = this.length();
         if (len < EPSILON) {
             throw new IllegalArgumentException("Cannot normalize zero vector");
         }
@@ -77,7 +81,6 @@ public class Vector3f {
         this.y = y;
         this.z = z;
     }
-
 
     public float getX() {
         return x;

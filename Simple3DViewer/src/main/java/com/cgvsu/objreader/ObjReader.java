@@ -79,7 +79,7 @@ public class ObjReader {
 			throw new ObjReaderException("Failed to parse float value.", lineInd);
 
 		} catch(IndexOutOfBoundsException e) {
-			throw new ObjReaderException("Too few texture vertex arguments.", lineInd);
+			throw new ObjReaderException("Too few com.cgvsu.texture vertex arguments.", lineInd);
 		}
 	}
 
