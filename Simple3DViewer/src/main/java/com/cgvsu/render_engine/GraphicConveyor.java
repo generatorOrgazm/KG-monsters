@@ -58,29 +58,23 @@ public class GraphicConveyor {
     }
 
     public static Matrix4f lookAt(Vector3f eye, Vector3f target, Vector3f up) {
-        Vector3f resultZ = target.sub(eye);
-        Vector3f resultX = up.cross(resultZ);
-        Vector3f resultY = resultZ.cross(resultX);
+        // Вектор Z (Forward) - смотрим ОТ цели К глазу для правой системы координат
+        Vector3f resultZ = eye.sub(target).normalize();
 
-        resultZ = resultZ.normalize();
-        resultX = resultX.normalize();
-        resultY = resultY.normalize();
+        // Вектор X (Right) - перпендикулярен Up и Z
+        Vector3f resultX = up.cross(resultZ).normalize();
 
-        Matrix4f translateMatrix = new Matrix4f(new float[][]{
-                {1, 0, 0, -eye.getX()},
-                {0, 1, 0, -eye.getY()},
-                {0, 0, 1, -eye.getZ()},
-                {0, 0, 0, 1}
-        });
+        // Вектор Y (Up) - перпендикулярен Z и X
+        Vector3f resultY = resultZ.cross(resultX).normalize();
 
-        Matrix4f rotationMatrix = new Matrix4f(new float[][]{
-                {resultX.getX(), resultY.getX(), resultZ.getX(), 0},
-                {resultX.getY(), resultY.getY(), resultZ.getY(), 0},
-                {resultX.getZ(), resultY.getZ(), resultZ.getZ(), 0},
-                {0, 0, 0, 1}
-        });
-
-        return rotationMatrix.multiplyMatrix(translateMatrix);
+        // Матрица вида для векторов-столбцов (Translation интегрирован в 4-й столбец)
+        float[][] matrix = new float[][]{
+                {resultX.x, resultX.y, resultX.z, -resultX.dot(eye)},
+                {resultY.x, resultY.y, resultY.z, -resultY.dot(eye)},
+                {resultZ.x, resultZ.y, resultZ.z, -resultZ.dot(eye)},
+                {0,         0,         0,         1}
+        };
+        return new Matrix4f(matrix);
     }
 
     public static Matrix4f perspective(
@@ -90,15 +84,14 @@ public class GraphicConveyor {
             final float farPlane) {
         float[][] matrix = new float[4][4];
         float fovRad = (float) Math.toRadians(fov);
+        float tanHalfFov = (float) Math.tan(fovRad * 0.5F);
 
-        float tangentMinusOne = (float) (1.0F / (Math.tan(fovRad * 0.5F)));
-
-
-        matrix[0][0] = tangentMinusOne / aspectRatio;
-        matrix[1][1] = tangentMinusOne;
-        matrix[2][2] = (farPlane + nearPlane) / (farPlane - nearPlane);
-        matrix[2][3] = 2.0F * farPlane * nearPlane / (nearPlane - farPlane);
-        matrix[3][2] = 1.0F;
+        matrix[0][0] = 1.0F / (aspectRatio * tanHalfFov);
+        matrix[1][1] = 1.0F / tanHalfFov;
+        matrix[2][2] = -(farPlane + nearPlane) / (farPlane - nearPlane);
+        matrix[2][3] = -(2.0F * farPlane * nearPlane) / (farPlane - nearPlane);
+        matrix[3][2] = -1.0F; // Стандарт для векторов-столбцов и деления на W
+        matrix[3][3] = 0.0F;
 
         return new Matrix4f(matrix);
     }
