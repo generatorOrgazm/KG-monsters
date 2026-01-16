@@ -22,7 +22,7 @@ public class Model {
     private boolean transformDirty = true;
     private boolean isTriangulated = false;
     private boolean hasValidNormals = false;
-    private boolean areNormalsComputed = false; // Новый флаг
+    private boolean areNormalsComputed = false;
 
     private Vector3f color = new Vector3f(0.7f, 0.7f, 0.7f);
     private boolean useWireframe = false;
@@ -34,25 +34,7 @@ public class Model {
         transform.setParentModel(this);
     }
 
-    // ========== ПОДГОТОВКА К ОТРИСОВКЕ ==========
-
-    /**
-     * Подготовить модель к отрисовке:
-     * 1. Применить трансформации
-     * 2. Триангулировать если нужно
-     * 3. Пересчитать нормали
-     */
-    public void prepareForRendering() {
-        applyTransform();
-
-        if (!isTriangulated) {
-            triangulate();
-        }
-
-        if (!areNormalsComputed || !hasValidNormals) {
-            recalculateNormals();
-        }
-    }
+    // ========== ТРАНСФОРМАЦИИ ==========
 
     public void markTransformDirty() {
         transformDirty = true;
@@ -89,13 +71,59 @@ public class Model {
         transformDirty = false;
     }
 
+    public void resetTransform() {
+        transform.reset();
+        markTransformDirty();
+        applyTransform();
+        System.out.println("Model transformations reset to default");
+    }
+
+    // ========== ПОДГОТОВКА К ОТРИСОВКЕ ==========
+
+    public void prepareForRendering() {
+        applyTransform();
+
+        if (!isTriangulated) {
+            triangulate();
+        }
+
+        if (!areNormalsComputed || normals.isEmpty() || normals.size() != vertices.size()) {
+            recalculateNormals();
+        }
+
+        // Отладочная информация о текстурах
+        if (!textureVertices.isEmpty() && hasTexture()) {
+            System.out.println("\n=== TEXTURE PREP INFO ===");
+            System.out.println("Texture vertices: " + textureVertices.size());
+
+            // Проверяем диапазон UV координат
+            float minU = Float.MAX_VALUE, maxU = Float.MIN_VALUE;
+            float minV = Float.MAX_VALUE, maxV = Float.MIN_VALUE;
+
+            for (Vector2f uv : textureVertices) {
+                minU = Math.min(minU, uv.x);
+                maxU = Math.max(maxU, uv.x);
+                minV = Math.min(minV, uv.y);
+                maxV = Math.max(maxV, uv.y);
+            }
+
+            System.out.println("UV Range: U[" + minU + " - " + maxU + "], V[" + minV + " - " + maxV + "]");
+
+            // Если UV координаты вне диапазона [0,1], нормализуем их
+            if (minU < 0 || maxU > 1 || minV < 0 || maxV > 1) {
+                System.out.println("Normalizing UV coordinates...");
+                normalizeUVCoordinates();
+            }
+        }
+    }
+
     // ========== ТРИАНГУЛЯЦИЯ ==========
 
     public void triangulate() {
         if (!isTriangulated) {
             Triangulator.triangulateModelInPlace(this);
             isTriangulated = true;
-            hasValidNormals = false; // Нормали нужно пересчитать
+            hasValidNormals = false;
             areNormalsComputed = false;
         }
     }
@@ -108,9 +136,6 @@ public class Model {
 
     // ========== НОРМАЛИ ==========
 
-    /**
-     * Принудительно пересчитать нормали, даже если они есть в файле
-     */
     public void recalculateNormals() {
         // Очищаем существующие нормали
         normals.clear();
@@ -180,7 +205,42 @@ public class Model {
         }
     }
 
-    // ========== ГЕТТЕРЫ ДЛЯ РЕНДЕРИНГА ==========
+    // ========== ТЕКСТУРЫ ==========
+
+    /**
+     * Нормализация UV координат
+     */
+    private void normalizeUVCoordinates() {
+        if (textureVertices.isEmpty()) return;
+
+        // Находим минимальные и максимальные значения
+        float minU = Float.MAX_VALUE, maxU = Float.MIN_VALUE;
+        float minV = Float.MAX_VALUE, maxV = Float.MIN_VALUE;
+
+        for (Vector2f uv : textureVertices) {
+            minU = Math.min(minU, uv.x);
+            maxU = Math.max(maxU, uv.x);
+            minV = Math.min(minV, uv.y);
+            maxV = Math.max(maxV, uv.y);
+        }
+
+        float rangeU = maxU - minU;
+        float rangeV = maxV - minV;
+
+        if (rangeU > 0 && rangeV > 0) {
+            // Нормализуем все UV координаты к диапазону [0,1]
+            for (int i = 0; i < textureVertices.size(); i++) {
+                Vector2f uv = textureVertices.get(i);
+                float newU = (uv.x - minU) / rangeU;
+                float newV = (uv.y - minV) / rangeV;
+                textureVertices.set(i, new Vector2f(newU, newV));
+            }
+
+            System.out.println("UV coordinates normalized to [0,1] range");
+        }
+    }
+
+    // ========== ГЕТТЕРЫ И СЕТТЕРЫ ==========
 
     public Vector3f getTransformedVertex(int index) {
         applyTransform();
@@ -197,8 +257,6 @@ public class Model {
         }
         return new Vector3f(0, 1, 0);
     }
-
-    // ========== РЕЖИМЫ ОТРИСОВКИ ==========
 
     public Vector3f getColor() {
         return color;
@@ -242,25 +300,6 @@ public class Model {
 
     public boolean hasTexture() {
         return texture != null && texture.isValid();
-    }
-
-    // ========== ДВУСТОРОННЯЯ ОТРИСОВКА ==========
-
-    private boolean twoSided = false;
-
-    public void setTwoSided(boolean twoSided) {
-        this.twoSided = twoSided;
-    }
-
-    public boolean isTwoSided() {
-        return twoSided;
-    }
-
-    public void resetTransform() {
-        transform.reset();
-        markTransformDirty(); // Помечаем, что трансформации изменились
-        applyTransform(); // Немедленно применяем сброс
-        System.out.println("Model transformations reset to default");
     }
 
     // ========== ИНФОРМАЦИЯ ==========

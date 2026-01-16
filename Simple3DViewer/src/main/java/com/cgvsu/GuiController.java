@@ -1,5 +1,6 @@
 package com.cgvsu;
 
+import com.cgvsu.math.vector.Vector2f;
 import javafx.scene.canvas.GraphicsContext;
 import com.cgvsu.model.Model;
 import com.cgvsu.render_engine.Camera;
@@ -1203,7 +1204,48 @@ public class GuiController {
         }
     }
 
+    @FXML
+    private void onFixTextureUVs() {
+        if (scene3D.getActiveModel() != null) {
+            Model model = scene3D.getActiveModel();
 
+            if (!model.textureVertices.isEmpty()) {
+                // Нормализуем UV координаты
+                float minU = Float.MAX_VALUE, maxU = Float.MIN_VALUE;
+                float minV = Float.MAX_VALUE, maxV = Float.MIN_VALUE;
+
+                for (var uv : model.textureVertices) {
+                    minU = Math.min(minU, uv.x);
+                    maxU = Math.max(maxU, uv.x);
+                    minV = Math.min(minV, uv.y);
+                    maxV = Math.max(maxV, uv.y);
+                }
+
+                System.out.println("Current UV range: U[" + minU + " - " + maxU + "], V[" + minV + " - " + maxV + "]");
+
+                if (minU < 0 || maxU > 1 || minV < 0 || maxV > 1) {
+                    // Нормализуем
+                    for (int i = 0; i < model.textureVertices.size(); i++) {
+                        var uv = model.textureVertices.get(i);
+                        float newU = (uv.x - minU) / (maxU - minU);
+                        float newV = (uv.y - minV) / (maxV - minV);
+                        model.textureVertices.set(i, new Vector2f(newU, newV));
+                    }
+                    System.out.println("UV coordinates normalized to [0,1]");
+                    showInfoAlert("UV Fixed", "Texture coordinates normalized to [0,1] range");
+                } else {
+                    System.out.println("UV coordinates already in [0,1] range");
+                    showInfoAlert("UV Check", "UV coordinates are already in [0,1] range");
+                }
+
+                requestRender();
+            } else {
+                showErrorAlert("No UVs", "Model has no texture coordinates");
+            }
+        } else {
+            showErrorAlert("No Model", "Please load a model first");
+        }
+    }
 
     // Геттеры для тестирования
     public com.cgvsu.model.Scene getScene3D() {
