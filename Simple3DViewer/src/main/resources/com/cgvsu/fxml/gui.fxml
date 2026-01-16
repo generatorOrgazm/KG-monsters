@@ -94,40 +94,11 @@
             <Label fx:id="fovLabel" text="FOV: 45°" prefWidth="60"/>
         </HBox>
 
-        <!-- Разделитель -->
-
         <!-- Кнопки управления -->
         <HBox spacing="10">
             <Button fx:id="optimizeButton" text="Performance" prefWidth="95"/>
             <Button fx:id="reloadModelButton" text="Reload Model" prefWidth="95"/>
         </HBox>
-
-        <!-- Разделитель -->
-
-        <!-- Управление камерой с клавиатуры -->
-        <Label text="Camera Movement:" style="-fx-font-weight: bold; -fx-font-size: 12; -fx-padding: 5 0 5 0;"/>
-        <VBox spacing="5">
-            <HBox spacing="5">
-                <Button text="↑ Forward" prefWidth="95"/>
-                <Button text="Target ↑ (Q)" prefWidth="95"/>
-            </HBox>
-            <HBox spacing="5">
-                <Button text="← Left" prefWidth="95"/>
-                <Button text="→ Right" prefWidth="95"/>
-            </HBox>
-            <HBox spacing="5">
-                <Button text="↓ Backward" prefWidth="95"/>
-                <Button text="Target ↓ (E)" prefWidth="95"/>
-            </HBox>
-            <HBox spacing="5">
-                <Button text="↥ Up (W)" prefWidth="95"/>
-                <Button text="↧ Down (S)" prefWidth="95"/>
-            </HBox>
-            <HBox spacing="5">
-                <Button text="Target ← (A)" prefWidth="95"/>
-                <Button text="Target → (D)" prefWidth="95"/>
-            </HBox>
-        </VBox>
 
         <Label text="Controls:" style="-fx-font-weight: bold; -fx-font-size: 12; -fx-padding: 5 0 5 0;"/>
         <VBox spacing="2" style="-fx-padding: 0 0 0 10;">
