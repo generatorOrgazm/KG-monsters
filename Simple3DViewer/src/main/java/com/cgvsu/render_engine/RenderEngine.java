@@ -28,16 +28,6 @@ public class RenderEngine {
 
         if (width <= 0 || height <= 0) return;
 
-        // ========== ОТЛАДКА ==========
-        if (frameCounter % 60 == 0) {
-            System.out.println("=== RENDER ===");
-            System.out.println("Size: " + width + "x" + height);
-            System.out.println("Model polygons: " + model.polygons.size());
-            System.out.println("Use texture: " + model.isUseTexture());
-            System.out.println("Has texture: " + (model.getTexture() != null));
-        }
-        frameCounter++;
-
         // ========== ПОДГОТОВКА ==========
         model.ensureTriangulated();
         model.ensureNormalsExist();
@@ -150,9 +140,6 @@ public class RenderEngine {
         // Рисуем подготовленное изображение на canvas
         graphicsContext.drawImage(writableImage, 0, 0);
 
-        if (frameCounter % 60 == 0) {
-            System.out.println("Triangles rendered: " + trianglesRendered);
-        }
     }
 
     // ========== МЕТОДЫ РЕНДЕРИНГА ==========
