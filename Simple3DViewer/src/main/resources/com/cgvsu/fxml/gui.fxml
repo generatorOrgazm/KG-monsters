@@ -1,54 +1,97 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.scene.control.MenuBar?>
-<?import javafx.scene.control.Menu?>
-<?import javafx.scene.control.MenuItem?>
-<?import javafx.scene.input.KeyCodeCombination?>
-<?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.canvas.Canvas?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.Font?>
+<?import javafx.scene.text.Text?>
 
-<AnchorPane fx:id="anchorPane" xmlns:fx="http://javafx.com/fxml" fx:controller="com.cgvsu.GuiController">
-    <MenuBar>
-        <Menu mnemonicParsing="false" text="File">
-            <MenuItem mnemonicParsing="false" onAction="#onOpenModelMenuItemClick" text="Load Model">
-                <accelerator>
-                    <KeyCodeCombination alt="UP" control="DOWN" meta="UP" shift="UP" shortcut="UP" code="F"/>
-                </accelerator>
-            </MenuItem>
-        </Menu>
-        <Menu mnemonicParsing="false" text="Camera Options">
-            <MenuItem mnemonicParsing="false" onAction="#handleCameraForward" text="Forward">
-                <accelerator>
-                    <KeyCodeCombination alt="UP" control="UP" meta="UP" shift="UP" shortcut="UP" code="UP"/>
-                </accelerator>
-            </MenuItem>
-            <MenuItem mnemonicParsing="false" onAction="#handleCameraBackward" text="Backward">
-                <accelerator>
-                    <KeyCodeCombination alt="UP" control="UP" meta="UP" shift="UP" shortcut="UP" code="DOWN"/>
-                </accelerator>
-            </MenuItem>
-            <MenuItem mnemonicParsing="false" onAction="#handleCameraLeft" text="Left">
-                <accelerator>
-                    <KeyCodeCombination alt="UP" control="UP" meta="UP" shift="UP" shortcut="UP" code="LEFT"/>
-                </accelerator>
-            </MenuItem>
-            <MenuItem mnemonicParsing="false" onAction="#handleCameraRight" text="Right">
-                <accelerator>
-                    <KeyCodeCombination alt="UP" control="UP" meta="UP" shift="UP" shortcut="UP" code="RIGHT"/>
-                </accelerator>
-            </MenuItem>
-            <MenuItem mnemonicParsing="false" onAction="#handleCameraUp" text="Up">
-                <accelerator>
-                    <KeyCodeCombination alt="UP" control="UP" meta="UP" shift="UP" shortcut="UP" code="W"/>
-                </accelerator>
-            </MenuItem>
-            <MenuItem mnemonicParsing="false" onAction="#handleCameraDown" text="Down">
-                <accelerator>
-                    <KeyCodeCombination alt="UP" control="UP" meta="UP" shift="UP" shortcut="UP" code="S"/>
-                </accelerator>
-            </MenuItem>
-        </Menu>
-    </MenuBar>
+<AnchorPane fx:id="anchorPane" prefHeight="900.0" prefWidth="1600.0" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.cgvsu.GuiController">
+    <children>
+        <SplitPane dividerPositions="0.72" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="30.0">
+            <items>
 
-    <Canvas fx:id="canvas" width="1600" height="870" AnchorPane.topAnchor="30.0"/>
+                <AnchorPane fx:id="canvasHolder" style="-fx-background-color: #2b2b2b;">
+                    <children>
+                        <Canvas fx:id="canvas" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
+                    </children>
+                </AnchorPane>
+
+                <ScrollPane fitToHeight="true" fitToWidth="true">
+                    <content>
+                        <AnchorPane minWidth="300.0" style="-fx-background-color: #f4f4f4;">
+                            <children>
+                                <VBox spacing="15.0" AnchorPane.leftAnchor="15.0" AnchorPane.rightAnchor="15.0" AnchorPane.topAnchor="15.0">
+                                    <children>
+
+                                        <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Модели">
+                                            <font><Font size="18.0" /></font>
+                                        </Text>
+                                        <ListView fx:id="listModels" prefHeight="180.0" style="-fx-border-color: #ccc;" />
+
+                                        <HBox spacing="10.0">
+                                            <children>
+                                                <Button maxWidth="1.7976931348623157E308" HBox.hgrow="ALWAYS" text="Скрыть" />
+                                                <Button maxWidth="1.7976931348623157E308" HBox.hgrow="ALWAYS" text="Удалить" />
+                                            </children>
+                                        </HBox>
+
+                                        <Separator />
+
+                                        <Accordion fx:id="accordion">
+                                            <panes>
+                                                <TitledPane animated="false" text="Трансформации">
+                                                    <content>
+                                                        <VBox spacing="8.0">
+                                                            <children>
+                                                                <Label text="Перемещение (X, Y, Z)" />
+                                                                <Slider fx:id="translateX" />
+                                                                <Slider fx:id="translateY" />
+                                                                <Slider fx:id="translateZ" />
+                                                                <Separator />
+                                                                <Button maxWidth="1.7976931348623157E308" text="Применить" />
+                                                            </children>
+                                                        </VBox>
+                                                    </content>
+                                                </TitledPane>
+                                                <TitledPane animated="false" text="Вид модели">
+                                                    <content>
+                                                        <VBox spacing="10.0">
+                                                            <children>
+                                                                <CheckBox text="Отображать сетку" selected="true" />
+                                                                <ColorPicker maxWidth="1.7976931348623157E308" />
+                                                            </children>
+                                                        </VBox>
+                                                    </content>
+                                                </TitledPane>
+                                            </panes>
+                                        </Accordion>
+
+                                        <Separator />
+
+                                        <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Свет">
+                                            <font><Font size="18.0" /></font>
+                                        </Text>
+                                        <ListView fx:id="listLights" prefHeight="150.0" />
+                                        <Button maxWidth="1.7976931348623157E308" text="Добавить источник" />
+
+                                    </children>
+                                </VBox>
+                            </children>
+                        </AnchorPane>
+                    </content>
+                </ScrollPane>
+            </items>
+        </SplitPane>
+
+        <MenuBar AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+            <menus>
+                <Menu text="Файл">
+                    <items>
+                        <MenuItem onAction="#onOpenModelMenuItemClick" text="Открыть..." />
+                    </items>
+                </Menu>
+            </menus>
+        </MenuBar>
+    </children>
 </AnchorPane>

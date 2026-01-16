@@ -8,6 +8,7 @@ import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.event.ActionEvent;
 import javafx.scene.canvas.Canvas;
+import javafx.scene.control.ListView;
 import javafx.scene.control.Slider;
 import javafx.scene.control.Label;
 import javafx.scene.layout.AnchorPane;
@@ -35,6 +36,15 @@ public class GuiController {
     @FXML
     private Canvas canvas;
 
+    @FXML
+    private AnchorPane canvasHolder;
+
+    @FXML
+    private ListView<String> listModels;
+
+    @FXML
+    private ListView<String> listLights;
+
     private Camera camera = new Camera(
             new Vector3f(0, 0, 5),
             new Vector3f(0, 0, 0),
@@ -55,6 +65,25 @@ public class GuiController {
 
         timeline = new Timeline();
         timeline.setCycleCount(Animation.INDEFINITE);
+
+        canvas.widthProperty().bind(canvasHolder.widthProperty());
+        canvas.heightProperty().bind(canvasHolder.heightProperty());
+
+        canvas.widthProperty().addListener((obs, oldVal, newVal) -> {
+            camera.setAspectRatio((float) (canvas.getWidth() / canvas.getHeight()));
+        });
+
+        listModels.getSelectionModel().selectedIndexProperty().addListener((obs, oldVal, newVal) -> {
+            // Здесь ты будешь менять активную модель в SceneTools
+            System.out.println("Выбрана модель №: " + newVal);
+        });
+
+        // 2. Слушатель: если размер изменился, перерисовываем сцену сразу
+        canvas.widthProperty().addListener(obj -> {
+            double width = canvas.getWidth();
+            double height = canvas.getHeight();
+            camera.setAspectRatio((float) (width / height));
+        });
 
         KeyFrame frame = new KeyFrame(Duration.millis(15), event -> {
             double width = canvas.getWidth();
@@ -111,6 +140,9 @@ public class GuiController {
         } catch (Exception e) {
             showErrorAlert("Ошибка парсинга модели", "Файл поврежден или имеет неверный формат: " + e.getMessage());
         }
+
+        listModels.getItems().add(file.getName());
+        listModels.getSelectionModel().selectLast();
     }
 
     private void showErrorAlert(String title, String content) {
