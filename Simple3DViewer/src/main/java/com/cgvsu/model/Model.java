@@ -5,64 +5,24 @@ import com.cgvsu.math.vector.Vector2f;
 import com.cgvsu.math.vector.Vector3f;
 import com.cgvsu.render_engine.GraphicConveyor;
 import com.cgvsu.utils.Triangulator;
+import com.cgvsu.texture.Texture;
 
 import java.util.ArrayList;
 
 public class Model {
 
-    //МАТЕМАТИКА
+    // МАТЕМАТИКА (геометрия)
     public ArrayList<Vector3f> vertices = new ArrayList<Vector3f>();
     public ArrayList<Vector3f> verticesTransform = new ArrayList<Vector3f>();
     public ArrayList<Vector2f> textureVertices = new ArrayList<Vector2f>();
     public ArrayList<Vector3f> normals = new ArrayList<Vector3f>();
     public ArrayList<Polygon> polygons = new ArrayList<Polygon>();
 
+    // ТРАНСФОРМАЦИИ
     public TransformModel transform = new TransformModel();
 
-
-        public void copyOriginalToTransform() {
-        verticesTransform.clear();
-        for (Vector3f vertex : vertices) {
-            verticesTransform.add(new Vector3f(vertex.x, vertex.y, vertex.z));
-        }
-    }
-
-
-    public void applyTransform() {
-
-        if (!transform.enabled || !transform.hasChanges()) {
-            copyOriginalToTransform();
-            return;
-        }
-
-        Matrix4f matrix = GraphicConveyor.translateRotateScale(transform.getPosition(), transform.getRotation(), transform.getScale());
-
-        verticesTransform.clear();
-        for (Vector3f vertex : vertices) {
-            Vector3f transformed = GraphicConveyor.multiplyMatrix4ByVector3(matrix, vertex);
-            verticesTransform.add(transformed);
-        }
-
-
-    }
-
-    public void resetTransform() {
-        transform.reset();
-        applyTransform();
-    }
-
-    public ArrayList<Vector3f> getVerticesForSave(boolean includeTransform) {
-        if (includeTransform) {
-            applyTransform();
-            return verticesTransform;
-        } else {
-            return vertices;
-        }
-    }
-
-// Рендеринг - Илья, всё что выше - моё
     // Флаги для состояния
-    private boolean transformDirty = true;
+    private boolean transformDirty = true; // ← ОДИН РАЗ!
     private boolean isTriangulated = false;
     private boolean hasValidNormals = false;
 
@@ -71,6 +31,7 @@ public class Model {
     private boolean useWireframe = false;
     private boolean useTexture = false;
     private boolean useLighting = false;
+    private Texture texture = null;
 
     // ========== КОНСТРУКТОРЫ ==========
     public Model() {
@@ -80,6 +41,37 @@ public class Model {
     // ========== ТРАНСФОРМАЦИИ ==========
     public void markTransformDirty() {
         transformDirty = true;
+    }
+
+    public void copyOriginalToTransform() {
+        verticesTransform.clear();
+        for (Vector3f vertex : vertices) {
+            verticesTransform.add(new Vector3f(vertex.x, vertex.y, vertex.z));
+        }
+    }
+
+    public void applyTransform() {
+        if (!transform.enabled || !transform.hasChanges() || !transformDirty) {
+            if (verticesTransform.isEmpty()) {
+                copyOriginalToTransform();
+            }
+            transformDirty = false;
+            return;
+        }
+
+        Matrix4f matrix = GraphicConveyor.translateRotateScale(
+                transform.getPosition(),
+                transform.getRotation(),
+                transform.getScale()
+        );
+
+        verticesTransform.clear();
+        for (Vector3f vertex : vertices) {
+            Vector3f transformed = GraphicConveyor.multiplyMatrix4ByVector3(matrix, vertex);
+            verticesTransform.add(transformed);
+        }
+
+        transformDirty = false;
     }
 
     // ========== УПРАВЛЕНИЕ ТРАНСФОРМАЦИЯМИ ==========
@@ -111,7 +103,10 @@ public class Model {
         transform.scaleUniform(factor);
     }
 
-
+    public void resetTransform() {
+        transform.reset();
+        applyTransform(); // Обновляем verticesTransform
+    }
 
     // ========== ТРИАНГУЛЯЦИЯ И НОРМАЛИ ==========
     public void triangulate() {
@@ -177,8 +172,15 @@ public class Model {
         }
     }
 
-
-
+    // ========== ВСПОМОГАТЕЛЬНЫЕ МЕТОДЫ ==========
+    public ArrayList<Vector3f> getVerticesForSave(boolean includeTransform) {
+        if (includeTransform) {
+            applyTransform(); // Убедимся, что трансформации применены
+            return verticesTransform;
+        } else {
+            return vertices;
+        }
+    }
 
     public int getTriangleCount() {
         return polygons.size(); // После триангуляции каждый полигон - треугольник
@@ -239,13 +241,22 @@ public class Model {
         this.useLighting = useLighting;
     }
 
+    // ========== ТЕКСТУРЫ ==========
+    public void setTexture(Texture texture) {
+        this.texture = texture;
+    }
+
+    public Texture getTexture() {
+        return texture;
+    }
+
+    public boolean hasTexture() {
+        return texture != null;
+    }
 
     @Override
     public String toString() {
         return String.format("Model[Vertices: %d, Triangles: %d, %s]",
                 vertices.size(), getTriangleCount(), transform.toString());
     }
-
-
-
 }

@@ -19,6 +19,7 @@ import java.nio.file.Path;
 import java.io.IOException;
 import java.io.File;
 import com.cgvsu.math.vector.*;
+import com.cgvsu.texture.Texture;
 
 import com.cgvsu.model.Model;
 import com.cgvsu.objreader.ObjReader;
@@ -34,19 +35,18 @@ public class GuiController {
     @FXML
     private Canvas canvas;
 
-
     private Camera camera = new Camera(
-            new Vector3f(0, 0, 5),      // Камера ближе
-            new Vector3f(0, 0, 0),      // Смотрит в центр
-            45.0F,                      // FOV 45 градусов
-            (float) (1600.0 / 900.0),   // Начальный aspect ratio
-            0.1F,                       // Ближняя плоскость
-            100.0F                      // Дальняя плоскость
+            new Vector3f(0, 0, 5),
+            new Vector3f(0, 0, 0),
+            45.0F,
+            (float) (1600.0 / 900.0),
+            0.1F,
+            100.0F
     );
 
     private Timeline timeline;
-
     private Scene scene = new Scene();
+
     @FXML
     private void initialize() {
         scene.getCameras().add(camera);
@@ -69,7 +69,6 @@ public class GuiController {
             for (Model model : scene.getModels()) {
                 RenderEngine.render(canvas.getGraphicsContext2D(), activeCamera, model, (int) width, (int) height);
             }
-
         });
 
         canvas.setOnMousePressed(event -> {
@@ -109,7 +108,7 @@ public class GuiController {
             scene.addModel(newModel);
         } catch (IOException e) {
             showErrorAlert("Ошибка ввода-вывода", "Не удалось прочитать файл с диска.");
-        } catch (Exception e) { // Здесь ловим ObjReaderException
+        } catch (Exception e) {
             showErrorAlert("Ошибка парсинга модели", "Файл поврежден или имеет неверный формат: " + e.getMessage());
         }
     }
@@ -150,5 +149,27 @@ public class GuiController {
     @FXML
     public void handleCameraDown(ActionEvent actionEvent) {
         camera.movePosition(new Vector3f(0, -TRANSLATION, 0));
+    }
+
+    @FXML
+    private void onLoadTextureMenuItemClick() {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.getExtensionFilters().add(
+                new FileChooser.ExtensionFilter("Images", "*.png", "*.jpg", "*.jpeg")
+        );
+
+        File file = fileChooser.showOpenDialog((Stage) canvas.getScene().getWindow());
+        if (file != null && scene.getActiveModel() != null) { // Используем активную модель вместо mesh
+            try {
+                Texture texture = new Texture(file.getAbsolutePath());
+                Model activeModel = scene.getActiveModel();
+                activeModel.setTexture(texture);
+                activeModel.setUseTexture(true);
+            } catch (Exception e) {
+                showErrorAlert("Ошибка загрузки текстуры", e.getMessage());
+            }
+        } else if (scene.getActiveModel() == null) {
+            showErrorAlert("Ошибка", "Сначала загрузите модель");
+        }
     }
 }
