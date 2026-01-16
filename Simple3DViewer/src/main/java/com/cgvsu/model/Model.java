@@ -259,4 +259,14 @@ public class Model {
         return String.format("Model[Vertices: %d, Triangles: %d, %s]",
                 vertices.size(), getTriangleCount(), transform.toString());
     }
+
+    private boolean twoSided = false; // По умолчано односторонняя
+
+    public void setTwoSided(boolean twoSided) {
+        this.twoSided = twoSided;
+    }
+
+    public boolean isTwoSided() {
+        return twoSided;
+    }
 }

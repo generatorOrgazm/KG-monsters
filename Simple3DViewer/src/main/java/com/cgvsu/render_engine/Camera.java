@@ -36,11 +36,6 @@ public class Camera {
             horizontalAng += deltaX * 0.2f;
             verticalAng += deltaY * 0.2f;
 
-            if (verticalAng > 89.9f){
-                verticalAng = 89.9f;
-            } else if (verticalAng < -89.9f){
-                verticalAng = -89.9f;
-            }
 
             float radius = Vector3f.lenghtBetweenToVectors(target, position);
 
@@ -98,6 +93,22 @@ public class Camera {
         return target;
     }
 
+    public float getFov() {
+        return fov;
+    }
+
+    public float getAspectRatio() {
+        return aspectRatio;
+    }
+
+    public float getNearPlane() {
+        return nearPlane;
+    }
+
+    public float getFarPlane() {
+        return farPlane;
+    }
+
     public void movePosition(final Vector3f translation) {
         this.position = this.position.add(translation);
         viewMatrixDirty = true;
@@ -108,7 +119,8 @@ public class Camera {
         viewMatrixDirty = true;
     }
 
-    Matrix4f getViewMatrix() {
+    // ЕДИНСТВЕННЫЙ метод getViewMatrix
+    public Matrix4f getViewMatrix() {
         if (viewMatrixDirty || cachedViewMatrix == null) {
             cachedViewMatrix = GraphicConveyor.lookAt(position, target, up);
             viewMatrixDirty = false;
@@ -116,7 +128,7 @@ public class Camera {
         return cachedViewMatrix;
     }
 
-    Matrix4f getProjectionMatrix() {
+    public Matrix4f getProjectionMatrix() {
         if (projectionMatrixDirty || cachedProjectionMatrix == null) {
             cachedProjectionMatrix = GraphicConveyor.perspective(fov, aspectRatio, nearPlane, farPlane);
             projectionMatrixDirty = false;
