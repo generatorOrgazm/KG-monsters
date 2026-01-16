@@ -60,21 +60,8 @@ public class GuiController {
     @FXML
     private Button resetCameraButton;
 
-
-    @FXML
-    private Slider fovSlider;
-
     @FXML
     private Label fovLabel;
-
-    @FXML
-    private CheckBox showCamerasCheckBox;
-
-    @FXML
-    private CheckBox showNormalsCheckBox;
-
-    @FXML
-    private Button optimizeButton;
 
     @FXML
     private Button reloadModelButton;
@@ -94,9 +81,6 @@ public class GuiController {
     private AnimationTimer animationTimer;
     private Scene javafxScene;
     private com.cgvsu.model.Scene scene3D = new com.cgvsu.model.Scene();
-    private long lastUpdateTime = 0;
-    private int frameCount = 0;
-
     // Флаги для оптимизации
     private boolean cameraMoved = false;
     private long lastRenderTime = 0;
@@ -105,7 +89,6 @@ public class GuiController {
 
     @FXML
     private void initialize() {
-        System.out.println("GuiController initializing...");
 
         // 1. Инициализация активной камеры
         activeCamera = new Camera(
@@ -140,143 +123,102 @@ public class GuiController {
         // 3. Инициализация ColorPicker
         colorPicker.setValue(Color.rgb(180, 180, 180));
         colorPicker.setOnAction(e -> {
-            System.out.println("Color changed");
             onColorChanged();
             requestRender();
         });
 
-        // 4. Инициализация FOV слайдера
-        fovSlider.setValue(activeCamera.getFov());
-        fovLabel.setText(String.format("FOV: %.0f°", fovSlider.getValue()));
-
-        fovSlider.valueProperty().addListener((obs, oldVal, newVal) -> {
-            System.out.println("FOV changed to: " + newVal);
-            activeCamera.setFov(newVal.floatValue());
-            fovLabel.setText(String.format("FOV: %.0f°", newVal));
-            requestRender();
-        });
 
         // 5. Инициализация чекбоксов
         wireframeCheckBox.setSelected(false);
         wireframeCheckBox.setOnAction(e -> {
-            System.out.println("Wireframe checkbox: " + wireframeCheckBox.isSelected());
             onWireframeChanged();
             requestRender();
         });
 
         textureCheckBox.setSelected(false);
         textureCheckBox.setOnAction(e -> {
-            System.out.println("Texture checkbox: " + textureCheckBox.isSelected());
             onTextureChanged();
             requestRender();
         });
 
         lightingCheckBox.setSelected(false);
         lightingCheckBox.setOnAction(e -> {
-            System.out.println("Lighting checkbox: " + lightingCheckBox.isSelected());
             onLightingChanged();
             requestRender();
         });
 
-        showCamerasCheckBox.setSelected(false);
-        showCamerasCheckBox.setOnAction(e -> {
-            System.out.println("Show cameras checkbox: " + showCamerasCheckBox.isSelected());
-            onShowCamerasChanged();
-            requestRender();
-        });
-
-        showNormalsCheckBox.setSelected(false);
-        showNormalsCheckBox.setOnAction(e -> {
-            System.out.println("Show normals checkbox: " + showNormalsCheckBox.isSelected());
-            requestRender();
-        });
 
         // 6. Инициализация ComboBox для камер
         updateCameraComboBox();
         cameraComboBox.setOnAction(e -> {
-            System.out.println("Camera selection changed");
             onCameraSelected();
         });
 
         // 7. Настройка обработчиков для основных кнопок
         addCameraButton.setOnAction(e -> {
-            System.out.println("Add camera button clicked");
             onAddCameraButtonClick();
         });
 
         removeCameraButton.setOnAction(e -> {
-            System.out.println("Remove camera button clicked");
             onRemoveCameraButtonClick();
         });
 
         resetCameraButton.setOnAction(e -> {
-            System.out.println("Reset camera button clicked");
             onResetCameraButtonClick();
         });
 
         reloadModelButton.setOnAction(e -> {
-            System.out.println("Reload model button clicked");
             onReloadModelButtonClick();
         });
 
         // 8. Настройка кнопок движения камеры
         if (forwardButton != null) {
             forwardButton.setOnAction(e -> {
-                System.out.println("Forward button clicked");
                 handleCameraForward(null);
             });
         }
         if (backwardButton != null) {
             backwardButton.setOnAction(e -> {
-                System.out.println("Backward button clicked");
                 handleCameraBackward(null);
             });
         }
         if (leftButton != null) {
             leftButton.setOnAction(e -> {
-                System.out.println("Left button clicked");
                 handleCameraLeft(null);
             });
         }
         if (rightButton != null) {
             rightButton.setOnAction(e -> {
-                System.out.println("Right button clicked");
                 handleCameraRight(null);
             });
         }
         if (upButton != null) {
             upButton.setOnAction(e -> {
-                System.out.println("Up button clicked");
                 handleCameraUp(null);
             });
         }
         if (downButton != null) {
             downButton.setOnAction(e -> {
-                System.out.println("Down button clicked");
                 handleCameraDown(null);
             });
         }
         if (targetLeftButton != null) {
             targetLeftButton.setOnAction(e -> {
-                System.out.println("Target left button clicked");
                 handleCameraTargetLeft(null);
             });
         }
         if (targetRightButton != null) {
             targetRightButton.setOnAction(e -> {
-                System.out.println("Target right button clicked");
                 handleCameraTargetRight(null);
             });
         }
         if (targetUpButton != null) {
             targetUpButton.setOnAction(e -> {
-                System.out.println("Target up button clicked");
                 handleCameraTargetUp(null);
             });
         }
         if (targetDownButton != null) {
             targetDownButton.setOnAction(e -> {
-                System.out.println("Target down button clicked");
                 handleCameraTargetDown(null);
             });
         }
@@ -295,21 +237,18 @@ public class GuiController {
 
         // 9. Настройка обработчиков мыши
         canvas.setOnMousePressed(event -> {
-            System.out.println("Mouse pressed at: " + event.getX() + ", " + event.getY());
             activeCamera.rotateCamera(event.getX(), event.getY(), false);
             cameraMoved = true;
             requestRender();
         });
 
         canvas.setOnMouseDragged(event -> {
-            System.out.println("Mouse dragged to: " + event.getX() + ", " + event.getY());
             activeCamera.rotateCamera(event.getX(), event.getY(), true);
             cameraMoved = true;
             requestRender();
         });
 
         canvas.setOnScroll(event -> {
-            System.out.println("Mouse scroll: " + event.getDeltaY());
             float delta = (float) event.getDeltaY() * 0.1f;
             activeCamera.mouseScrolle(delta);
             cameraMoved = true;
@@ -318,14 +257,6 @@ public class GuiController {
 
         canvas.setFocusTraversable(true);
 
-        // 10. Настройка горячих клавиш
-        anchorPane.sceneProperty().addListener((obs, oldScene, newScene) -> {
-            if (newScene != null) {
-                javafxScene = newScene;
-                setupKeyboardShortcuts();
-                System.out.println("Scene loaded, keyboard shortcuts set up");
-            }
-        });
 
         // 11. Запускаем анимационный таймер
         animationTimer = new AnimationTimer() {
@@ -335,8 +266,6 @@ public class GuiController {
             }
         };
         animationTimer.start();
-
-        System.out.println("GuiController initialized successfully");
     }
 
     private void renderFrame() {
@@ -361,15 +290,9 @@ public class GuiController {
 
         // Рендеринг
         if (scene3D.getActiveModel() != null) {
-            System.out.println("Rendering model... Wireframe: " +
-                    scene3D.getActiveModel().isUseWireframe() +
-                    ", Texture: " + scene3D.getActiveModel().isUseTexture() +
-                    ", Has texture: " + scene3D.getActiveModel().hasTexture());
-
             RenderEngine.render(gc, activeCamera,
                     scene3D.getActiveModel(), (int) width, (int) height);
         } else {
-            // Если нет модели, показываем инструкцию
             gc.setFill(Color.BLACK);
             gc.fillText("No model loaded. Use File -> Load Model", 20, 30);
             gc.fillText("Controls: Mouse Drag = Rotate, Mouse Wheel = Zoom", 20, 50);
@@ -492,7 +415,6 @@ public class GuiController {
         }
 
         try {
-            System.out.println("Loading model: " + file.getAbsolutePath());
             String fileContent = Files.readString(file.toPath());
             Model newModel = ObjReader.read(fileContent);
 
@@ -506,9 +428,6 @@ public class GuiController {
 
             // Применяем текущие настройки
             applySettingsToModel(newModel);
-
-            System.out.println("Model loaded successfully. Vertices: " + newModel.vertices.size() +
-                    ", Polygons: " + newModel.polygons.size());
 
             showInfoAlert("Model Loaded",
                     String.format("Model '%s' loaded successfully!\n\nVertices: %d\nTriangles: %d",
@@ -548,18 +467,13 @@ public class GuiController {
         File file = fileChooser.showOpenDialog(getStage());
         if (file != null) {
             try {
-                System.out.println("Loading texture from: " + file.getAbsolutePath());
-
-                // Проверяем существование файла
                 if (!file.exists()) {
                     showErrorAlert("File Error", "File does not exist: " + file.getAbsolutePath());
                     return;
                 }
 
-                // Загружаем текстуру
                 Texture texture = new Texture(file.getAbsolutePath());
 
-                // Проверяем загрузку
                 if (texture == null) {
                     showErrorAlert("Texture Error", "Failed to create texture object");
                     return;
@@ -569,9 +483,6 @@ public class GuiController {
                     showErrorAlert("Texture Error", "Failed to load image from file");
                     return;
                 }
-
-                System.out.println("Texture loaded successfully. Size: " +
-                        texture.getWidth() + "x" + texture.getHeight());
 
                 // Устанавливаем текстуру
                 Model activeModel = scene3D.getActiveModel();
@@ -796,7 +707,6 @@ public class GuiController {
     private void onResetCameraButtonClick() {
         activeCamera.setPosition(new Vector3f(0, 0, 10));
         activeCamera.setTarget(new Vector3f(0, 0, 0));
-        fovSlider.setValue(45.0);
         requestRender();
         showInfoAlert("Camera Reset", "Camera position and settings reset to default");
     }
@@ -806,7 +716,6 @@ public class GuiController {
         int selectedIndex = cameraComboBox.getSelectionModel().getSelectedIndex();
         if (selectedIndex >= 0 && selectedIndex < scene3D.getCameras().size()) {
             activeCamera = scene3D.getCameras().get(selectedIndex);
-            fovSlider.setValue(activeCamera.getFov());
             requestRender();
         }
     }

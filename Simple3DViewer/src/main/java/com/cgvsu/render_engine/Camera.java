@@ -36,6 +36,11 @@ public class Camera {
             horizontalAng += deltaX * 0.2f;
             verticalAng += deltaY * 0.2f;
 
+            if (verticalAng > 89.9f){
+                verticalAng = 89.9f;
+            } else if (verticalAng < -89.9f){
+                verticalAng = -89.9f;
+            }
 
             float radius = Vector3f.lenghtBetweenToVectors(target, position);
 

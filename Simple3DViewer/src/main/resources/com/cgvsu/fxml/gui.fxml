@@ -60,10 +60,6 @@
                   style="-fx-padding: 2 0 2 0;"/>
         <CheckBox fx:id="lightingCheckBox" text="Lighting (Press 3)"
                   style="-fx-padding: 2 0 2 0;"/>
-        <CheckBox fx:id="showCamerasCheckBox" text="Show Cameras"
-                  style="-fx-padding: 2 0 2 0;"/>
-        <CheckBox fx:id="showNormalsCheckBox" text="Show Normals"
-                  style="-fx-padding: 2 0 2 0;"/>
 
         <!-- Разделитель -->
 
@@ -89,30 +85,15 @@
         <!-- Настройки FOV -->
         <Label text="Field of View:" style="-fx-font-weight: bold; -fx-font-size: 12; -fx-padding: 5 0 5 0;"/>
         <HBox spacing="10" alignment="CENTER_LEFT">
-            <Slider fx:id="fovSlider" min="30" max="120" value="45" prefWidth="150"
-                    showTickLabels="true" showTickMarks="true" majorTickUnit="30" minorTickCount="5"/>
             <Label fx:id="fovLabel" text="FOV: 45°" prefWidth="60"/>
         </HBox>
 
         <!-- Кнопки управления -->
         <HBox spacing="10">
-            <Button fx:id="optimizeButton" text="Performance" prefWidth="95"/>
             <Button fx:id="reloadModelButton" text="Reload Model" prefWidth="95"/>
         </HBox>
 
         <Label text="Controls:" style="-fx-font-weight: bold; -fx-font-size: 12; -fx-padding: 5 0 5 0;"/>
-        <VBox spacing="2" style="-fx-padding: 0 0 0 10;">
-            <Label text="• Mouse Drag: Rotate Camera" style="-fx-font-size: 10;"/>
-            <Label text="• Mouse Wheel: Zoom" style="-fx-font-size: 10;"/>
-            <Label text="• Arrow Keys: Move Camera" style="-fx-font-size: 10;"/>
-            <Label text="• W/S: Move Up/Down" style="-fx-font-size: 10;"/>
-            <Label text="• A/D/Q/E: Move Target" style="-fx-font-size: 10;"/>
-            <Label text="• 1/2/3: Toggle Modes" style="-fx-font-size: 10;"/>
-            <Label text="• R: Reset Transform" style="-fx-font-size: 10;"/>
-            <Label text="• Ctrl+O: Load Model" style="-fx-font-size: 10;"/>
-            <Label text="• Ctrl+T: Load Texture" style="-fx-font-size: 10;"/>
-        </VBox>
-
     </VBox>
 
 </AnchorPane>
