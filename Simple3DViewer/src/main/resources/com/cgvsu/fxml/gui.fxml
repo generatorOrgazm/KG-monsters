@@ -15,6 +15,7 @@
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.text.Font?>
 
+<?import javafx.scene.control.ListView?>
 <AnchorPane fx:id="anchorPane" xmlns:fx="http://javafx.com/fxml" fx:controller="com.cgvsu.GuiController">
 
     <!-- Верхнее меню -->
@@ -60,17 +61,14 @@
                   style="-fx-padding: 2 0 2 0;"/>
         <CheckBox fx:id="lightingCheckBox" text="Lighting (Press 3)"
                   style="-fx-padding: 2 0 2 0;"/>
-        <CheckBox fx:id="showCamerasCheckBox" text="Show Cameras"
-                  style="-fx-padding: 2 0 2 0;"/>
-        <CheckBox fx:id="showNormalsCheckBox" text="Show Normals"
-                  style="-fx-padding: 2 0 2 0;"/>
-
-        <!-- Разделитель -->
 
         <!-- Выбор цвета -->
         <Label text="Model Color:" style="-fx-font-weight: bold; -fx-font-size: 12; -fx-padding: 5 0 5 0;"/>
         <ColorPicker fx:id="colorPicker"/>
 
+        <Label text="Список моделей:" style="-fx-font-weight: bold;"/>
+        <ListView fx:id="listModels" prefHeight="150.0" />
+        <Button text="Удалить выбранную" onAction="#onDeleteSelectedModel" maxWidth="Infinity"/>
         <!-- Разделитель -->
 
         <!-- Управление камерами -->
@@ -98,49 +96,13 @@
 
         <!-- Кнопки управления -->
         <HBox spacing="10">
-            <Button fx:id="optimizeButton" text="Performance" prefWidth="95"/>
             <Button fx:id="reloadModelButton" text="Reload Model" prefWidth="95"/>
         </HBox>
 
         <!-- Разделитель -->
 
         <!-- Управление камерой с клавиатуры -->
-        <Label text="Camera Movement:" style="-fx-font-weight: bold; -fx-font-size: 12; -fx-padding: 5 0 5 0;"/>
-        <VBox spacing="5">
-            <HBox spacing="5">
-                <Button text="↑ Forward" prefWidth="95"/>
-                <Button text="Target ↑ (Q)" prefWidth="95"/>
-            </HBox>
-            <HBox spacing="5">
-                <Button text="← Left" prefWidth="95"/>
-                <Button text="→ Right" prefWidth="95"/>
-            </HBox>
-            <HBox spacing="5">
-                <Button text="↓ Backward" prefWidth="95"/>
-                <Button text="Target ↓ (E)" prefWidth="95"/>
-            </HBox>
-            <HBox spacing="5">
-                <Button text="↥ Up (W)" prefWidth="95"/>
-                <Button text="↧ Down (S)" prefWidth="95"/>
-            </HBox>
-            <HBox spacing="5">
-                <Button text="Target ← (A)" prefWidth="95"/>
-                <Button text="Target → (D)" prefWidth="95"/>
-            </HBox>
-        </VBox>
 
-        <Label text="Controls:" style="-fx-font-weight: bold; -fx-font-size: 12; -fx-padding: 5 0 5 0;"/>
-        <VBox spacing="2" style="-fx-padding: 0 0 0 10;">
-            <Label text="• Mouse Drag: Rotate Camera" style="-fx-font-size: 10;"/>
-            <Label text="• Mouse Wheel: Zoom" style="-fx-font-size: 10;"/>
-            <Label text="• Arrow Keys: Move Camera" style="-fx-font-size: 10;"/>
-            <Label text="• W/S: Move Up/Down" style="-fx-font-size: 10;"/>
-            <Label text="• A/D/Q/E: Move Target" style="-fx-font-size: 10;"/>
-            <Label text="• 1/2/3: Toggle Modes" style="-fx-font-size: 10;"/>
-            <Label text="• R: Reset Transform" style="-fx-font-size: 10;"/>
-            <Label text="• Ctrl+O: Load Model" style="-fx-font-size: 10;"/>
-            <Label text="• Ctrl+T: Load Texture" style="-fx-font-size: 10;"/>
-        </VBox>
 
     </VBox>
 

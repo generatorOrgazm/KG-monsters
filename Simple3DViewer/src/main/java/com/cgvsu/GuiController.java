@@ -23,6 +23,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.io.IOException;
 import java.io.File;
+import java.util.List;
 import java.util.Optional;
 
 public class GuiController {
@@ -68,16 +69,6 @@ public class GuiController {
     private Label fovLabel;
 
     @FXML
-    private CheckBox showCamerasCheckBox;
-
-    @FXML
-    private CheckBox showNormalsCheckBox;
-
-    // Кнопки управления
-    @FXML
-    private Button optimizeButton;
-
-    @FXML
     private Button reloadModelButton;
 
     // Кнопки движения камеры
@@ -101,16 +92,16 @@ public class GuiController {
     private boolean cameraMoved = false;
     private Model currentModel = null;
     private String currentModelPath = null;
+    private Model selectedModel = null;
+
+    @FXML
+    private ListView<String> listModels;
 
     // Флаг для отладки (можно включить при необходимости)
     private static final boolean DEBUG_MODE = false;
 
     @FXML
     private void initialize() {
-        if (DEBUG_MODE) {
-            System.out.println("GuiController initializing...");
-        }
-
         // 1. Инициализация активной камеры
         activeCamera = new Camera(
                 new Vector3f(0, 0, 10),
@@ -153,10 +144,6 @@ public class GuiController {
             onReloadModelButtonClick();
         });
 
-        optimizeButton.setOnAction(e -> {
-            if (DEBUG_MODE) System.out.println("Optimize button clicked");
-            onOptimizeButtonClick();
-        });
 
         // 6. Настройка кнопок движения камеры
         setupCameraMovementButtons();
@@ -182,9 +169,15 @@ public class GuiController {
         };
         animationTimer.start();
 
-        if (DEBUG_MODE) {
-            System.out.println("GuiController initialized successfully");
-        }
+        listModels.getSelectionModel().selectedIndexProperty().addListener((obs, oldVal, newVal) -> {
+            int index = newVal.intValue();
+            if (index >= 0 && index < scene3D.getModels().size()) {
+                selectedModel = scene3D.getModels().get(index);
+                // Теперь все изменения (цвет, сетка) можно применять к selectedModel
+                applySettingsToModel(selectedModel);
+                requestRender();
+            }
+        });
     }
 
     /**
@@ -223,12 +216,6 @@ public class GuiController {
             requestRender();
         });
 
-        // Нормали
-        showNormalsCheckBox.setSelected(false);
-        showNormalsCheckBox.setOnAction(e -> {
-            if (DEBUG_MODE) System.out.println("Show normals checkbox: " + showNormalsCheckBox.isSelected());
-            requestRender();
-        });
     }
 
     /**
@@ -247,13 +234,6 @@ public class GuiController {
         });
 
         // Отображение камер
-        showCamerasCheckBox.setSelected(false);
-        showCamerasCheckBox.setOnAction(e -> {
-            if (DEBUG_MODE) System.out.println("Show cameras checkbox: " + showCamerasCheckBox.isSelected());
-            onShowCamerasChanged();
-            requestRender();
-        });
-
         // ComboBox для камер
         updateCameraComboBox();
         cameraComboBox.setOnAction(e -> {
@@ -441,55 +421,29 @@ public class GuiController {
         });
     }
 
-    // ========== ОСНОВНОЙ МЕТОД РЕНДЕРИНГА ==========
-
     private void renderFrame() {
         double width = canvas.getWidth();
         double height = canvas.getHeight();
-
         if (width <= 0 || height <= 0) return;
 
-        // Обновление aspect ratio камеры
         activeCamera.setAspectRatio((float) (width / height));
+        GraphicsContext gc = canvas.getGraphicsContext2D();
 
-        // Рендеринг
-        if (scene3D.getActiveModel() != null) {
-            // Применяем настройки к модели
-            applySettingsToModel(scene3D.getActiveModel());
+        // 1. Подготавливаем буфер ОДИН РАЗ для всех моделей
+        RenderEngine.prepareBuffer((int) width, (int) height);
 
-            // Подготавливаем модель к отрисовке
-            scene3D.getActiveModel().prepareForRendering();
-
-            // Выполняем рендеринг
-            GraphicsContext gc = canvas.getGraphicsContext2D();
-            RenderEngine.render(gc, activeCamera, scene3D.getActiveModel(),
-                    (int) width, (int) height);
-        } else {
-            // Если нет модели, показываем инструкцию
-            GraphicsContext gc = canvas.getGraphicsContext2D();
-            gc.clearRect(0, 0, width, height);
-            gc.setFill(Color.LIGHTGRAY);
-            gc.fillRect(0, 0, width, height);
-
-            gc.setFill(Color.BLACK);
-            gc.fillText("No model loaded. Use File -> Load Model", 20, 30);
-            gc.fillText("Controls:", 20, 60);
-            gc.fillText("• Mouse Drag = Rotate camera", 20, 80);
-            gc.fillText("• Mouse Wheel = Zoom", 20, 100);
-            gc.fillText("• Arrow Keys = Move camera", 20, 120);
-            gc.fillText("• W/S = Move up/down", 20, 140);
-            gc.fillText("• A/D/Q/E = Move target", 20, 160);
-            gc.fillText("• 1/2/3 = Toggle rendering modes", 20, 180);
-            gc.fillText("• R = Reset transformations", 20, 200);
+        // 2. Рисуем все модели по очереди
+        // Они будут использовать один и тот же Z-буфер и не сотрут друг друга
+        if (!scene3D.getModels().isEmpty()) {
+            for (Model m : scene3D.getModels()) {
+                RenderEngine.render(gc, activeCamera, m, (int) width, (int) height);
+            }
         }
     }
 
     private void requestRender() {
-        // В данном случае рендеринг происходит каждый кадр,
-        // так что этот метод просто помечает необходимость обновления
     }
 
-    // ========== ОБРАБОТЧИКИ РЕЖИМОВ ОТРИСОВКИ ==========
 
     @FXML
     private void onWireframeChanged() {
@@ -703,104 +657,36 @@ public class GuiController {
         cameraMoved = true;
         requestRender();
     }
+
     @FXML
     private void onOpenModelMenuItemClick() {
         FileChooser fileChooser = new FileChooser();
         fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Model (*.obj)", "*.obj"));
-        fileChooser.setTitle("Load 3D Model");
-        fileChooser.setInitialDirectory(new File(System.getProperty("user.home")));
+        fileChooser.setTitle("Загрузить модели");
 
-        File file = fileChooser.showOpenDialog(getStage());
-        if (file == null) {
-            return;
-        }
+        List<File> files = fileChooser.showOpenMultipleDialog(getStage());
+        if (files == null) return;
 
-        try {
-            System.out.println("Loading model: " + file.getAbsolutePath());
-            String fileContent = Files.readString(file.toPath());
-            Model newModel = ObjReader.read(fileContent);
+        for (File file : files) {
+            try {
+                String fileContent = Files.readString(file.toPath());
+                Model newModel = ObjReader.read(fileContent);
 
-            // ОТЛАДКА ТЕКСТУР - добавить в начало
-            System.out.println("\n=== TEXTURE DEBUG INFO ===");
-            System.out.println("Model: " + file.getName());
-            System.out.println("Texture vertices count: " + newModel.textureVertices.size());
-            System.out.println("Polygons count: " + newModel.polygons.size());
+                // Добавляем модель в сцену (БЕЗ очистки!)
+                scene3D.addModel(newModel);
 
-            // Анализ UV координат
-            if (!newModel.textureVertices.isEmpty()) {
-                float minU = Float.MAX_VALUE;
-                float maxU = Float.MIN_VALUE;
-                float minV = Float.MAX_VALUE;
-                float maxV = Float.MIN_VALUE;
+                // Добавляем в ListView
+                listModels.getItems().add(file.getName());
 
-                for (var uv : newModel.textureVertices) {
-                    minU = Math.min(minU, uv.x);
-                    maxU = Math.max(maxU, uv.x);
-                    minV = Math.min(minV, uv.y);
-                    maxV = Math.max(maxV, uv.y);
-                }
+                // Применяем текущие настройки к новой модели
+                applySettingsToModel(newModel);
 
-                System.out.println("UV Range: U[" + minU + " - " + maxU + "], V[" + minV + " - " + maxV + "]");
-
-                // Проверяем первые несколько UV координат
-                System.out.println("\nFirst 10 UV coordinates:");
-                for (int i = 0; i < Math.min(10, newModel.textureVertices.size()); i++) {
-                    var uv = newModel.textureVertices.get(i);
-                    System.out.println("  UV[" + i + "]: (" + uv.x + ", " + uv.y + ")");
-                }
-
-                // Проверяем первые несколько полигонов
-                System.out.println("\nFirst 3 polygons texture indices:");
-                for (int i = 0; i < Math.min(3, newModel.polygons.size()); i++) {
-                    var polygon = newModel.polygons.get(i);
-                    var texIndices = polygon.getTextureVertexIndices();
-                    if (!texIndices.isEmpty()) {
-                        System.out.print("Polygon " + i + " texture indices: ");
-                        for (int texIdx : texIndices) {
-                            System.out.print(texIdx + " ");
-                        }
-                        System.out.println();
-                    }
-                }
+            } catch (Exception e) {
+                showErrorAlert("Ошибка", "Не удалось загрузить: " + file.getName() + "\n" + e.getMessage());
             }
-            System.out.println("=== END DEBUG ===\n");
-
-            // Сохраняем путь для возможной перезагрузки
-            currentModelPath = file.getAbsolutePath();
-            currentModel = newModel;
-
-            // Очищаем старые модели и добавляем новую
-            scene3D.getModels().clear();
-            scene3D.addModel(newModel);
-
-            // Применяем текущие настройки
-            applySettingsToModel(newModel);
-
-            System.out.println("Model loaded successfully. Vertices: " + newModel.vertices.size() +
-                    ", Polygons: " + newModel.polygons.size() +
-                    ", Texture vertices: " + newModel.textureVertices.size());
-
-            // Автоматически пытаемся найти текстуру
-            autoFindTexture(file, newModel);
-
-            showInfoAlert("Model Loaded",
-                    String.format("Model '%s' loaded successfully!\n\nVertices: %d\nTriangles: %d\nTexture vertices: %d",
-                            file.getName(),
-                            newModel.vertices.size(),
-                            newModel.getTriangleCount(),
-                            newModel.textureVertices.size()));
-
-            requestRender();
-
-        } catch (IOException e) {
-            showErrorAlert("File Error", "Cannot read file: " + e.getMessage());
-            e.printStackTrace();
-        } catch (Exception e) {
-            showErrorAlert("Model Error", "Failed to parse model: " + e.getMessage());
-            e.printStackTrace();
         }
+        requestRender();
     }
-
     /**
      * Автоматический поиск текстуры для модели
      */
@@ -889,6 +775,15 @@ public class GuiController {
      * Применение настроек к модели
      */
 
+    @FXML
+    private void onDeleteSelectedModel() {
+        int index = listModels.getSelectionModel().getSelectedIndex();
+        if (index >= 0) {
+            scene3D.removeModel(index); // Удаляем из движка
+            listModels.getItems().remove(index); // Удаляем из интерфейса
+            requestRender();
+        }
+    }
 
     @FXML
     private void onLoadTextureMenuItemClick() {

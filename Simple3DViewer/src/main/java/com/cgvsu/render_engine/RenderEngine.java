@@ -22,6 +22,31 @@ public class RenderEngine {
     private static final float AMBIENT_LIGHT = 0.3f;
     private static final float DIFFUSE_INTENSITY = 0.7f;
 
+
+    public static void clearBuffers(int width, int height) {
+        if (zBuffer == null || zBuffer.getWidth() != width || zBuffer.getHeight() != height) {
+            zBuffer = new ZBuffer(width, height);
+        }
+        zBuffer.clear();
+        // Если у тебя есть writableImage, его тоже стоит подготовить тут
+    }
+
+    public static void prepareBuffer(int width, int height) {
+        if (zBuffer == null || zBuffer.getWidth() != width || zBuffer.getHeight() != height) {
+            zBuffer = new ZBuffer(width, height);
+            writableImage = new WritableImage(width, height);
+            pixelWriter = writableImage.getPixelWriter();
+        }
+        zBuffer.clear(); // Очищаем только тут!
+
+        // Очищаем картинку (заливаем фоном)
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                pixelWriter.setColor(x, y, Color.LIGHTGRAY);
+            }
+        }
+    }
+
     public static void render(
             final GraphicsContext graphicsContext,
             final Camera camera,
@@ -38,13 +63,7 @@ public class RenderEngine {
         Matrix4f projectionMatrix = camera.getProjectionMatrix();
         Matrix4f viewProjectionMatrix = projectionMatrix.multiplyMatrix(viewMatrix);
 
-        // Инициализация Z-буфера и изображения
-        if (zBuffer == null || zBuffer.getWidth() != width || zBuffer.getHeight() != height) {
-            zBuffer = new ZBuffer(width, height);
-            writableImage = new WritableImage(width, height);
-            pixelWriter = writableImage.getPixelWriter();
-        }
-        zBuffer.clear();
+
 
         // Очистка изображения
         for (int x = 0; x < width; x++) {
