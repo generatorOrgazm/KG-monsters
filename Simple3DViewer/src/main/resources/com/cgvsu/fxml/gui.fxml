@@ -20,20 +20,12 @@
 
     <!-- Верхнее меню -->
     <MenuBar>
-        <Menu text="File">
-            <MenuItem text="Load Model (Ctrl+O)" onAction="#onOpenModelMenuItemClick"/>
-            <MenuItem text="Load Texture (Ctrl+T)" onAction="#onLoadTextureMenuItemClick"/>
-            <MenuItem text="Export Model" onAction="#onExportModelMenuItemClick"/>
-            <MenuItem text="Clear Scene (Delete)" onAction="#onClearSceneMenuItemClick"/>
-            <MenuItem text="Toggle Fullscreen (Ctrl+F)" onAction="#onToggleFullscreen"/>
-        </Menu>
-
-        <Menu text="View">
-            <MenuItem text="Reset Transformations (R)" onAction="#onResetAllTransformations"/>
-        </Menu>
-
-        <Menu text="Help">
-            <MenuItem text="About" onAction="#onAboutMenuItemClick"/>
+        <Menu text="Файл">
+            <MenuItem text="Загрузить модель" onAction="#onOpenModelMenuItemClick"/>
+            <MenuItem text="Загрузить текстурки" onAction="#onLoadTextureMenuItemClick"/>
+            <MenuItem text="Экспортировать модель" onAction="#onExportModelMenuItemClick"/>
+            <MenuItem text="Очистить сцену" onAction="#onClearSceneMenuItemClick"/>
+            <MenuItem text="Полноэкранный режим" onAction="#onToggleFullscreen"/>
         </Menu>
     </MenuBar>
 
@@ -45,7 +37,7 @@
           style="-fx-background-color: #f0f0f0; -fx-padding: 10; -fx-border-color: #ccc; -fx-border-width: 1; -fx-min-width: 280;">
 
         <!-- Заголовок -->
-        <Label text="3D Viewer Settings" style="-fx-font-weight: bold; -fx-font-size: 16;">
+        <Label text="Панель управления" style="-fx-font-weight: bold; -fx-font-size: 16;">
             <font>
                 <Font name="System Bold" size="16.0"/>
             </font>
@@ -54,12 +46,12 @@
         <!-- Разделитель -->
 
         <!-- Режимы отрисовки -->
-        <Label text="Rendering Modes:" style="-fx-font-weight: bold; -fx-font-size: 12;"/>
-        <CheckBox fx:id="wireframeCheckBox" text="Wireframe (Press 1)"
+        <Label text="" style="-fx-font-weight: bold; -fx-font-size: 12;"/>
+        <CheckBox fx:id="wireframeCheckBox" text="Сетка"
                   style="-fx-padding: 2 0 2 0;"/>
-        <CheckBox fx:id="textureCheckBox" text="Texture (Press 2)"
+        <CheckBox fx:id="textureCheckBox" text="Наложить текстуру"
                   style="-fx-padding: 2 0 2 0;"/>
-        <CheckBox fx:id="lightingCheckBox" text="Lighting (Press 3)"
+        <CheckBox fx:id="lightingCheckBox" text="Освящение"
                   style="-fx-padding: 2 0 2 0;"/>
 
         <!-- Выбор цвета -->
@@ -72,7 +64,7 @@
         <!-- Разделитель -->
 
         <!-- Управление камерами -->
-        <Label text="Camera Control:" style="-fx-font-weight: bold; -fx-font-size: 12; -fx-padding: 5 0 5 0;"/>
+        <Label text="Упраление камерой:" style="-fx-font-weight: bold; -fx-font-size: 12; -fx-padding: 5 0 5 0;"/>
 
         <HBox spacing="5">
             <ComboBox fx:id="cameraComboBox" prefWidth="150"/>
@@ -80,7 +72,7 @@
             <Button fx:id="removeCameraButton" text="-" prefWidth="30"/>
         </HBox>
 
-        <Button fx:id="resetCameraButton" text="Reset Camera" prefWidth="200"/>
+        <Button fx:id="resetCameraButton" text="Вернуть камеру" prefWidth="200"/>
 
         <!-- Разделитель -->
 
@@ -96,7 +88,7 @@
 
         <!-- Кнопки управления -->
         <HBox spacing="10">
-            <Button fx:id="reloadModelButton" text="Reload Model" prefWidth="95"/>
+            <Button fx:id="reloadModelButton" text="Обнулить модель" prefWidth="95"/>
         </HBox>
 
         <!-- Разделитель -->
