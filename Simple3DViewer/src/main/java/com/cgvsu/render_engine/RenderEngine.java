@@ -210,11 +210,6 @@ public class RenderEngine {
         graphicsContext.drawImage(writableImage, 0, 0);
     }
 
-    // ========== ОСНОВНЫЕ МЕТОДЫ ОТРИСОВКИ ==========
-
-    /**
-     * Отрисовка текстурированного треугольника
-     */
     private static void drawTexturedTriangle(
             PixelWriter pixelWriter, ZBuffer zb,
             Vector2f p1, float z1, Vector2f uv1,
@@ -268,9 +263,6 @@ public class RenderEngine {
         }
     }
 
-    /**
-     * Отрисовка текстурированного треугольника с освещением от камеры
-     */
     private static void drawTexturedTriangleWithLighting(
             PixelWriter pixelWriter, ZBuffer zb, Camera camera,
             Vector2f p1, float z1, Vector2f uv1, Vector3f normal1,
@@ -350,9 +342,7 @@ public class RenderEngine {
         }
     }
 
-    /**
-     * Отрисовка цветного треугольника
-     */
+
     private static void drawColoredTriangle(
             PixelWriter pixelWriter, ZBuffer zb,
             Vector2f p1, float z1,
@@ -369,9 +359,6 @@ public class RenderEngine {
         drawFilledTriangle(pixelWriter, zb, p1, z1, p2, z2, p3, z3, fxColor);
     }
 
-    /**
-     * Отрисовка цветного треугольника с освещением от камеры
-     */
     private static void drawColoredTriangleWithLighting(
             PixelWriter pixelWriter, ZBuffer zb, Camera camera,
             Vector2f p1, float z1, Vector3f normal1,
@@ -500,7 +487,6 @@ public class RenderEngine {
         return new Vector3f(0, 0, 1);
     }
 
-    // ========== ВСПОМОГАТЕЛЬНЫЕ МЕТОДЫ ==========
 
     private static boolean isTriangleVisible(Vector2f p1, Vector2f p2, Vector2f p3, int width, int height) {
         return !(p1.x < 0 && p2.x < 0 && p3.x < 0) &&

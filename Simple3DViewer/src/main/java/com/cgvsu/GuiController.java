@@ -180,9 +180,6 @@ public class GuiController {
         });
     }
 
-    /**
-     * Инициализация режимов отрисовки
-     */
     private void initializeRenderingModes() {
         // Цвет модели
         colorPicker.setValue(Color.rgb(180, 180, 180));
@@ -218,9 +215,6 @@ public class GuiController {
 
     }
 
-    /**
-     * Инициализация управления камерами
-     */
     private void initializeCameraControls() {
         // FOV слайдер
         fovSlider.setValue(activeCamera.getFov());
@@ -258,9 +252,7 @@ public class GuiController {
         });
     }
 
-    /**
-     * Настройка кнопок движения камеры
-     */
+
     private void setupCameraMovementButtons() {
         if (forwardButton != null) {
             forwardButton.setOnAction(e -> handleCameraForward(null));
@@ -294,9 +286,6 @@ public class GuiController {
         }
     }
 
-    /**
-     * Настройка обработчиков мыши
-     */
     private void setupMouseHandlers() {
         canvas.setOnMousePressed(event -> {
             if (DEBUG_MODE) System.out.println("Mouse pressed at: " + event.getX() + ", " + event.getY());
@@ -322,9 +311,7 @@ public class GuiController {
         canvas.setFocusTraversable(true);
     }
 
-    /**
-     * Настройка горячих клавиш
-     */
+
     private void setupKeyboardShortcuts() {
         if (javafxScene == null) return;
 
@@ -498,7 +485,6 @@ public class GuiController {
         }
     }
 
-    // ========== УПРАВЛЕНИЕ КАМЕРАМИ ==========
 
     @FXML
     private void onShowCamerasChanged() {
@@ -586,7 +572,6 @@ public class GuiController {
         }
     }
 
-    // ========== МЕТОДЫ ДВИЖЕНИЯ КАМЕРЫ ==========
 
     @FXML
     public void handleCameraForward(ActionEvent actionEvent) {
@@ -687,9 +672,6 @@ public class GuiController {
         }
         requestRender();
     }
-    /**
-     * Автоматический поиск текстуры для модели
-     */
     private void autoFindTexture(File modelFile, Model model) {
         if (model.textureVertices.isEmpty()) {
             System.out.println("Model has no texture coordinates, skipping texture search");
@@ -897,7 +879,6 @@ public class GuiController {
         }
     }
 
-    // ========== ВСПОМОГАТЕЛЬНЫЕ МЕТОДЫ ==========
 
     @FXML
     private void onToggleFullscreen() {
