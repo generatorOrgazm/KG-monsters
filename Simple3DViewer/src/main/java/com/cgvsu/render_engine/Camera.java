@@ -43,7 +43,7 @@ public class Camera {
             float zCamera = target.z + radius * (float) Math.cos(Math.toRadians(verticalAng)) * (float) Math.cos(Math.toRadians(horizontalAng));
             position.set(xCamera, yCamera, zCamera);
 
-            viewMatrixDirty = true; // Матрица вида устарела
+            viewMatrixDirty = true;
         }
 
         mousePositionX = newMouseX;
@@ -118,7 +118,7 @@ public class Camera {
         viewMatrixDirty = true;
     }
 
-    // ЕДИНСТВЕННЫЙ метод getViewMatrix
+
     public Matrix4f getViewMatrix() {
         if (viewMatrixDirty || cachedViewMatrix == null) {
             cachedViewMatrix = GraphicConveyor.lookAt(position, target, up);
@@ -149,7 +149,7 @@ public class Camera {
     private double mousePositionX;
     private double mousePositionY;
 
-    // Кэширование матриц
+
     private Matrix4f cachedViewMatrix = null;
     private Matrix4f cachedProjectionMatrix = null;
     private boolean viewMatrixDirty = true;

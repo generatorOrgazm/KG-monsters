@@ -85,7 +85,7 @@ public class GraphicConveyor {
         matrix[1][1] = 1.0F / tanHalfFov;
         matrix[2][2] = -(farPlane + nearPlane) / (farPlane - nearPlane);
         matrix[2][3] = -(2.0F * farPlane * nearPlane) / (farPlane - nearPlane);
-        matrix[3][2] = -1.0F; // Стандарт для векторов-столбцов и деления на W
+        matrix[3][2] = -1.0F;
         matrix[3][3] = 0.0F;
 
         return new Matrix4f(matrix);
