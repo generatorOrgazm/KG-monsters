@@ -7,6 +7,7 @@ import com.cgvsu.render_engine.Camera;
 import com.cgvsu.render_engine.RenderEngine;
 import com.cgvsu.math.vector.Vector3f;
 import com.cgvsu.objreader.ObjReader;
+import com.cgvsu.math.AffineTransformations;
 import com.cgvsu.texture.Texture;
 import javafx.fxml.FXML;
 import javafx.animation.AnimationTimer;
@@ -71,6 +72,36 @@ public class GuiController {
     @FXML
     private Button reloadModelButton;
 
+    @FXML
+    private TextField posXField;
+
+    @FXML
+    private TextField posYField;
+
+    @FXML
+    private TextField posZField;
+
+    @FXML
+    private TextField rotYField;
+
+    @FXML
+    private TextField rotXField;
+
+    @FXML
+    private TextField rotZField;
+
+    @FXML
+    private TextField scaleXField;
+
+    @FXML
+    private TextField scaleYField;
+
+    @FXML
+    private TextField scaleZField;
+
+
+
+
     // Кнопки движения камеры
     @FXML private Button forwardButton;
     @FXML private Button backwardButton;
@@ -99,6 +130,7 @@ public class GuiController {
 
     // Флаг для отладки (можно включить при необходимости)
     private static final boolean DEBUG_MODE = false;
+
 
     @FXML
     private void initialize() {
@@ -178,7 +210,131 @@ public class GuiController {
                 requestRender();
             }
         });
+        initializeTransformFields();
     }
+
+    private void initializeTransformFields() {
+        posXField.setText("0");
+        posYField.setText("0");
+        posZField.setText("0");
+        rotXField.setText("0");
+        rotZField.setText("0");
+        rotYField.setText("0");
+        scaleXField.setText("0");
+        scaleYField.setText("0");
+        scaleZField.setText("0");
+
+        addNumericValidation(posXField);
+        addNumericValidation(posYField);
+        addNumericValidation(posZField);
+        addNumericValidation(rotXField);
+        addNumericValidation(rotYField);
+        addNumericValidation(rotZField);
+        addNumericValidation(scaleXField);
+        addNumericValidation(scaleYField);
+        addNumericValidation(scaleZField);
+
+
+    }
+
+    private void addNumericValidation(TextField textField) {
+        textField.textProperty().addListener((observable, oldvalue, newvalue) -> {
+            if (!newvalue.matches("-?\\d*(\\d*)")) {
+                textField.setText(oldvalue);
+            }
+        });
+    }
+
+    @FXML
+    private void onApplyPositionClick() {
+        if (selectedModel == null) {
+            showErrorAlert("Нет модели", "Выберите модель из списка");
+            return;
+        }
+
+        try {
+            float x = Float.parseFloat(posXField.getText());
+            float y = Float.parseFloat(posYField.getText());
+            float z = Float.parseFloat(posZField.getText());
+
+            selectedModel.transform.setPosition(new Vector3f(x, y, z));
+            requestRender();
+
+        } catch (NumberFormatException e) {
+            showErrorAlert("Ошибка ввода", "Введите корректные числовые значения");
+        }
+    }
+
+    @FXML
+    private void onApplyRotationClick() {
+        if (selectedModel == null) {
+            showErrorAlert("Нет модели", "Выберите модель из списка");
+            return;
+        }
+
+        try {
+            float x = Float.parseFloat(rotXField.getText());
+            float y = Float.parseFloat(rotYField.getText());
+            float z = Float.parseFloat(rotZField.getText());
+
+            selectedModel.transform.setRotation(new Vector3f(x, y, z));
+            requestRender();
+
+
+        } catch (NumberFormatException e) {
+            showErrorAlert("Ошибка ввода", "Введите корректные числовые значения");
+        }
+    }
+
+
+    @FXML
+    private void onApplyScaleClick() {
+        if (selectedModel == null) {
+            showErrorAlert("Нет модели", "Выберите модель из списка");
+            return;
+        }
+
+        try {
+            float x = Float.parseFloat(scaleXField.getText());
+            float y = Float.parseFloat(scaleYField.getText());
+            float z = Float.parseFloat(scaleZField.getText());
+
+
+            selectedModel.transform.setScale(new Vector3f(x, y, z));
+            requestRender();
+
+
+        } catch (NumberFormatException e) {
+            showErrorAlert("Ошибка ввода", "Введите корректные числовые значения");
+        }
+    }
+
+    @FXML
+    private void onDoubleScaleClick() {
+        if (selectedModel == null) {
+            showErrorAlert("Нет модели", "Выберите модель из списка");
+            return;
+        }
+
+        try {
+            Vector3f currentScale = selectedModel.transform.getScale();
+            Vector3f newScale = new Vector3f(
+                    currentScale.x * 2,
+                    currentScale.y * 2,
+                    currentScale.x * 2
+            );
+
+            selectedModel.transform.setScale(newScale);
+
+            scaleXField.setText(String.format("%.2f", newScale.x));
+            scaleYField.setText(String.format("%.2f", newScale.y));
+            scaleZField.setText(String.format("%.2f", newScale.z));
+        } catch (NumberFormatException e) {
+            showErrorAlert("Ошибка ввода", "Введите корректные числовые значения");
+        }
+    }
+
+
 
     private void initializeRenderingModes() {
         // Цвет модели
@@ -674,7 +830,6 @@ public class GuiController {
     }
     private void autoFindTexture(File modelFile, Model model) {
         if (model.textureVertices.isEmpty()) {
-            System.out.println("Model has no texture coordinates, skipping texture search");
             return;
         }
 
@@ -696,7 +851,6 @@ public class GuiController {
                 "diffuse.png"
         };
 
-        System.out.println("Searching for texture for model: " + baseName);
 
         // Сначала ищем в той же директории
         for (String textureName : possibleNames) {
@@ -719,8 +873,6 @@ public class GuiController {
                 return;
             }
         }
-
-        System.out.println("No texture found automatically for model: " + baseName);
     }
 
     /**
@@ -936,40 +1088,9 @@ public class GuiController {
 
     @FXML
     private void onAboutMenuItemClick() {
-        String about = """
-            Simple 3D Viewer v1.0
-            
-            Features:
-            • OBJ model loading
-            • Triangulation and normals calculation
-            • Z-buffer depth testing
-            • Texture mapping
-            • Lighting
-            • Multiple rendering modes
-            • Multiple camera support
-            
-            Rendering Modes:
-            • 1 - Toggle wireframe
-            • 2 - Toggle texture
-            • 3 - Toggle lighting
-            
-            Controls:
-            • Mouse Drag - Rotate camera
-            • Mouse Wheel - Zoom
-            • Arrow Keys - Move camera
-            • W/S - Move up/down
-            • A/D/Q/E - Move target
-            • R - Reset transformations
-            • Ctrl+O - Load model
-            • Ctrl+T - Load texture
-            • Delete - Clear scene
-            
-            """;
-
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
         alert.setTitle("About Simple 3D Viewer");
         alert.setHeaderText("Simple 3D Viewer v1.0");
-        alert.setContentText(about);
         alert.getDialogPane().setPrefSize(400, 500);
         alert.showAndWait();
     }
@@ -1014,11 +1135,6 @@ public class GuiController {
         if (scene3D.getActiveModel() != null) {
             Model model = scene3D.getActiveModel();
 
-            System.out.println("\n=== CURRENT MODEL TEXTURE INFO ===");
-            System.out.println("Has texture object: " + model.hasTexture());
-            System.out.println("Use texture flag: " + model.isUseTexture());
-            System.out.println("Texture vertices: " + model.textureVertices.size());
-            System.out.println("Polygons: " + model.polygons.size());
 
             if (!model.textureVertices.isEmpty()) {
                 // Статистика UV координат
@@ -1036,12 +1152,6 @@ public class GuiController {
                     if (uv.y > 1) largeV++;
                 }
 
-                System.out.println("UV Statistics:");
-                System.out.println("  Out of [0,1] range: " + outOfRange + "/" + model.textureVertices.size());
-                System.out.println("  Negative U: " + negativeU);
-                System.out.println("  U > 1: " + largeU);
-                System.out.println("  Negative V: " + negativeV);
-                System.out.println("  V > 1: " + largeV);
 
                 // Показываем проблемные UV координаты
                 if (outOfRange > 0) {
@@ -1072,7 +1182,6 @@ public class GuiController {
                 System.out.println("Warning: " + missingTextureIndices + " polygons have mismatched vertex/texture indices");
             }
 
-            System.out.println("=== END DEBUG ===\n");
 
             showInfoAlert("Texture Debug", "Texture information printed to console. Check the terminal for details.");
         } else {

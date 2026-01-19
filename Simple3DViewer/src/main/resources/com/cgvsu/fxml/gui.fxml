@@ -16,6 +16,7 @@
 <?import javafx.scene.text.Font?>
 
 <?import javafx.scene.control.ListView?>
+<?import javafx.scene.control.TextField?>
 <AnchorPane fx:id="anchorPane" xmlns:fx="http://javafx.com/fxml" fx:controller="com.cgvsu.GuiController">
 
     <!-- Верхнее меню -->
@@ -62,8 +63,6 @@
         <ListView fx:id="listModels" prefHeight="150.0" />
         <Button text="Удалить выбранную" onAction="#onDeleteSelectedModel" maxWidth="Infinity"/>
         <!-- Разделитель -->
-
-        <!-- Управление камерами -->
         <Label text="Упраление камерой:" style="-fx-font-weight: bold; -fx-font-size: 12; -fx-padding: 5 0 5 0;"/>
 
         <HBox spacing="5">
@@ -74,9 +73,6 @@
 
         <Button fx:id="resetCameraButton" text="Вернуть камеру" prefWidth="200"/>
 
-        <!-- Разделитель -->
-
-        <!-- Настройки FOV -->
         <Label text="Field of View:" style="-fx-font-weight: bold; -fx-font-size: 12; -fx-padding: 5 0 5 0;"/>
         <HBox spacing="10" alignment="CENTER_LEFT">
             <Slider fx:id="fovSlider" min="30" max="120" value="45" prefWidth="150"
@@ -84,16 +80,50 @@
             <Label fx:id="fovLabel" text="FOV: 45°" prefWidth="60"/>
         </HBox>
 
-        <!-- Разделитель -->
+        <Label text="преобразования:" style="-fx-font-weight: bold; -fx-font-size: 14; -fx-text-fill: #333; -fx-padding: 5 0 5 0;"/>
 
-        <!-- Кнопки управления -->
+        <Label text="Перемещение (Position):" style="-fx-font-weight: bold; -fx-font-size: 12;"/>
+        <HBox spacing="5">
+            <Label text="X:" prefWidth="20"/>
+            <TextField fx:id="posXField" text="0" prefWidth="50"/>
+            <Label text="Y:" prefWidth="20"/>
+            <TextField fx:id="posYField" text="0" prefWidth="50"/>
+            <Label text="Z:" prefWidth="20"/>
+            <TextField fx:id="posZField" text="0" prefWidth="50"/>
+        </HBox>
+        <Button text="Применить перемещение" onAction="#onApplyPositionClick" prefWidth="200"/>
+
+        <!-- ВРАЩЕНИЕ -->
+        <Label text="Вращение (Rotation):" style="-fx-font-weight: bold; -fx-font-size: 12; -fx-padding: 10 0 0 0;"/>
+        <HBox spacing="5">
+            <Label text="X:" prefWidth="20"/>
+            <TextField fx:id="rotXField" text="0" prefWidth="50"/>
+            <Label text="Y:" prefWidth="20"/>
+            <TextField fx:id="rotYField" text="0" prefWidth="50"/>
+            <Label text="Z:" prefWidth="20"/>
+            <TextField fx:id="rotZField" text="0" prefWidth="50"/>
+        </HBox>
+        <Button text="Применить вращение" onAction="#onApplyRotationClick" prefWidth="200"/>
+
+        <!-- МАСШТАБИРОВАНИЕ -->
+        <Label text="Масштабирование (Scale):" style="-fx-font-weight: bold; -fx-font-size: 12; -fx-padding: 10 0 0 0;"/>
+        <HBox spacing="5">
+            <Label text="X:" prefWidth="20"/>
+            <TextField fx:id="scaleXField" text="1" prefWidth="50"/>
+            <Label text="Y:" prefWidth="20"/>
+            <TextField fx:id="scaleYField" text="1" prefWidth="50"/>
+            <Label text="Z:" prefWidth="20"/>
+            <TextField fx:id="scaleZField" text="1" prefWidth="50"/>
+        </HBox>
+        <Button text="Применить масштаб" onAction="#onApplyScaleClick" prefWidth="200"/>
+
+
         <HBox spacing="10">
             <Button fx:id="reloadModelButton" text="Обнулить модель" prefWidth="95"/>
         </HBox>
 
-        <!-- Разделитель -->
 
-        <!-- Управление камерой с клавиатуры -->
+
 
 
     </VBox>

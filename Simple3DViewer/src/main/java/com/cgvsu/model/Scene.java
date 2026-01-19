@@ -12,7 +12,6 @@ public class Scene {
     private int activeCameraIndex = 0;
 
     public Scene() {
-        // Создаем стандартную камеру при инициализации
         Camera defaultCamera = new Camera(
                 new Vector3f(0, 0, 5),
                 new Vector3f(0, 0, 0),

@@ -23,8 +23,6 @@ public class AffineTransformations {
     private Matrix4f A = Matrix4f.unitMatrix();
 
 
-    public AffineTransformations() {
-    }
 
     public AffineTransformations(float sx, float sy, float sz, float rx, float ry, float rz, float tx, float ty, float tz) {
         Sx = sx;

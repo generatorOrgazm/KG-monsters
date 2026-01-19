@@ -93,8 +93,6 @@ public class Model {
 
         // Отладочная информация о текстурах
         if (!textureVertices.isEmpty() && hasTexture()) {
-            System.out.println("\n=== TEXTURE PREP INFO ===");
-            System.out.println("Texture vertices: " + textureVertices.size());
 
             // Проверяем диапазон UV координат
             float minU = Float.MAX_VALUE, maxU = Float.MIN_VALUE;
@@ -107,7 +105,6 @@ public class Model {
                 maxV = Math.max(maxV, uv.y);
             }
 
-            System.out.println("UV Range: U[" + minU + " - " + maxU + "], V[" + minV + " - " + maxV + "]");
 
             // Если UV координаты вне диапазона [0,1], нормализуем их
             if (minU < 0 || maxU > 1 || minV < 0 || maxV > 1) {
